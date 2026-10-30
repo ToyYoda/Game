@@ -1,6 +1,6 @@
 # Store-Texte
 
-Hinweis: Das Spiel ist bisher nur auf Deutsch. Die englischen Texte sind für den Store gedacht, damit die Seite international lesbar ist. Für eine breite Veröffentlichung auf Steam lohnt sich eine englische Spieloberfläche.
+Das Spiel ist auf Deutsch und Englisch spielbar (Sprache folgt dem Gerät, im Menü umschaltbar). In Steamworks und der Play Console beide Sprachen angeben.
 
 ## Deutsch
 
@@ -25,6 +25,7 @@ Dein Licht folgt dem Zeiger und zieht einen Schweif hinter sich her. Sobald sich
 • Mit Freunden: bis zu vier Lichter in einer Arena – wer ein anderes Licht in seine Schlinge nimmt, zerreißt dessen Kette
 • Arena: eine riesige Online-Welt für bis zu 200 Spieler mit Live-Rangliste und Übersichtskarte
 • Keine Werbung, kein Konto nötig
+• Auf Deutsch und Englisch
 
 **Kategorie / Tags:** Arcade, Action, Casual, Highscore, Mehrspieler, Neon, Minimalistisch
 
@@ -51,7 +52,7 @@ Your light follows the pointer and leaves a trail behind it. As soon as the trai
 • With Friends: up to four lights in one arena – catch another light in your loop to break its chain
 • Arena: a huge online world for up to 200 players with live leaderboard and minimap
 • No ads, no account required
-• Game interface currently in German
+• Available in English and German
 
 **Category / Tags:** Arcade, Action, Casual, Score Attack, Multiplayer, Neon, Minimalist
 

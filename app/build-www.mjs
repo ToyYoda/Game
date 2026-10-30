@@ -1,5 +1,5 @@
 // Baut die App-Fassung nach app/www: Spielseite mit mitgelieferten Schriften und PeerJS (läuft offline)
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, rmSync, existsSync, cpSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -9,7 +9,8 @@ const out = join(here, 'www');
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, 'fonts'), { recursive: true });
 
-let src = readFileSync(join(root, 'src', 'lichtschlinge.html'), 'utf8');
+// Zeilenenden vereinheitlichen (Git unter Windows liefert CRLF)
+let src = readFileSync(join(root, 'src', 'lichtschlinge.html'), 'utf8').replace(/\r\n/g, '\n');
 src = src.replace('<script src="sim.js"></script>', () => '<script>\n' + readFileSync(join(root, 'src', 'sim.js'), 'utf8') + '</script>');
 
 // Google-Fonts-Verweise durch lokale Schriften ersetzen
@@ -32,6 +33,9 @@ for (const lic of ['@fontsource/unbounded/LICENSE', '@fontsource/chakra-petch/LI
   copyFileSync(join(here, 'node_modules', lic), join(out, 'fonts', lic.split('/')[1] + '-LICENSE.txt'));
 }
 writeFileSync(join(out, 'fonts.css'), css);
+// Musik mitnehmen, falls vorhanden (music/theme.mp3)
+const musicDir = join(root, 'music');
+if (existsSync(musicDir)) cpSync(musicDir, join(out, 'music'), { recursive: true });
 copyFileSync(join(here, 'node_modules', 'peerjs', 'dist', 'peerjs.min.js'), join(out, 'peerjs.min.js'));
 copyFileSync(join(here, 'node_modules', 'peerjs', 'LICENSE'), join(out, 'peerjs-LICENSE.txt'));
 

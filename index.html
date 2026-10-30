@@ -128,7 +128,7 @@ button.copy { font: 600 13px var(--f-ui); letter-spacing: .08em; text-transform:
 .plist .sub { color: var(--mute); font-size: 12px; white-space: nowrap; }
 .dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
 #mute {
-  position: fixed; z-index: 6;
+  position: fixed; z-index: 6; padding: 0;
   right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass);
   color: var(--mute); font: 600 11px var(--f-ui); letter-spacing: .05em; cursor: pointer;
@@ -148,107 +148,110 @@ body.playing #mute { opacity: .35; }
 <canvas id="c"></canvas>
 
 <div id="hud">
-  <div><div class="hud-label">Punkte</div><div id="score">0</div></div>
-  <div id="mult-box"><div class="hud-label">Kette</div><div id="mult">×1</div><div id="mult-bar"><div id="mult-fill"></div></div></div>
-  <div id="best-box"><div class="hud-label" id="best-label">Rekord</div><div id="best">0</div><div id="board" hidden></div></div>
+  <div><div class="hud-label" data-i18n="hud.points">Punkte</div><div id="score">0</div></div>
+  <div id="mult-box"><div class="hud-label" data-i18n="hud.chain">Kette</div><div id="mult">×1</div><div id="mult-bar"><div id="mult-fill"></div></div></div>
+  <div id="best-box"><div class="hud-label" id="best-label" data-i18n="hud.best">Rekord</div><div id="best">0</div><div id="board" hidden></div></div>
 </div>
 
 <div id="menu" class="overlay">
   <div class="panel">
     <h1>LICHT&shy;SCHLINGE</h1>
-    <p class="lead">Dein Licht zieht einen Schweif. Kreuzt er sich selbst, schließt sich die Schlinge – und alles darin verglüht.</p>
+    <p class="lead" data-i18n="menu.lead">Dein Licht zieht einen Schweif. Kreuzt er sich selbst, schließt sich die Schlinge – und alles darin verglüht.</p>
     <dl class="rules">
-      <dt>Maus</dt><dd>Das Licht folgt dem Zeiger. Kreise Gegner ein.</dd>
-      <dt>Klick</dt><dd>Schockwelle stößt Gegner weg, lädt sich durch Treffer auf.</dd>
-      <dt>Kette</dt><dd>Jede volle Schlinge erhöht den Multiplikator und verlängert den Schweif.</dd>
-      <dt>Achtung</dt><dd>Eine Berührung und es ist vorbei. Rote Klingen zerschneiden den Schweif.</dd>
+      <dt data-i18n="r.mouse">Maus</dt><dd data-i18n="r.mouse.d">Das Licht folgt dem Zeiger. Kreise Gegner ein.</dd>
+      <dt data-i18n="r.click">Klick</dt><dd data-i18n="r.click.d">Schockwelle stößt Gegner weg, lädt sich durch Treffer auf.</dd>
+      <dt data-i18n="r.chain">Kette</dt><dd data-i18n="r.chain.d">Jede volle Schlinge erhöht den Multiplikator und verlängert den Schweif.</dd>
+      <dt data-i18n="r.warn">Achtung</dt><dd data-i18n="r.warn.d">Eine Berührung und es ist vorbei. Rote Klingen zerschneiden den Schweif.</dd>
     </dl>
     <div class="row">
-      <button class="go" id="start" type="button">Allein spielen</button>
-      <button class="alt" id="to-arena" type="button">Arena</button>
-      <button class="alt" id="to-mp" type="button">Mit Freunden</button>
+      <button class="go" id="start" type="button" data-i18n="menu.solo">Allein spielen</button>
+      <button class="alt" id="to-arena" type="button" data-i18n="menu.arena">Arena</button>
+      <button class="alt" id="to-mp" type="button" data-i18n="menu.friends">Mit Freunden</button>
     </div>
-    <p class="small">Rekord allein: <span id="menu-best">0</span></p>
-    <button class="link" id="quit" type="button" hidden>Beenden</button>
+    <p class="small"><span data-i18n="menu.best">Rekord allein:</span> <span id="menu-best">0</span></p>
+    <div class="row">
+      <button class="link" id="lang" type="button" data-i18n="menu.lang">English</button>
+      <button class="link" id="quit" type="button" data-i18n="menu.quit" hidden>Beenden</button>
+    </div>
   </div>
 </div>
 
 <div id="arena" class="overlay off">
   <div class="panel narrow">
-    <h2 class="cool">Arena</h2>
-    <p class="lead">Eine riesige Welt für bis zu 200 Lichter. Fang Gegner, zerreiß fremde Ketten und kletter in der Rangliste nach oben. Wer verglüht, steigt sofort wieder ein.</p>
-    <label class="field-wrap"><span class="hud-label">Dein Name</span>
-      <input class="field" id="arena-name" maxlength="14" autocomplete="nickname" placeholder="Name"></label>
-    <button class="go" id="arena-join" type="button">Arena betreten</button>
+    <h2 class="cool" data-i18n="menu.arena">Arena</h2>
+    <p class="lead" data-i18n="arena.lead">Eine riesige Welt für bis zu 200 Lichter. Fang Gegner, zerreiß fremde Ketten und kletter in der Rangliste nach oben. Wer verglüht, steigt sofort wieder ein.</p>
+    <label class="field-wrap"><span class="hud-label" data-i18n="name.label">Dein Name</span>
+      <input class="field" id="arena-name" maxlength="14" autocomplete="nickname" placeholder="Name" data-i18n-ph="name.ph"></label>
+    <button class="go" id="arena-join" type="button" data-i18n="arena.join">Arena betreten</button>
     <p class="small" id="arena-online"></p>
     <p class="status" id="arena-status" role="status"></p>
-    <button class="link" id="arena-back" type="button">Zurück</button>
+    <button class="link" id="arena-back" type="button" data-i18n="back">Zurück</button>
   </div>
 </div>
 
 <div id="mp" class="overlay off">
   <div class="panel narrow">
-    <h2 class="cool">Mit Freunden</h2>
-    <p class="lead">Bis zu vier Lichter in einer Arena. Wer am meisten fängt, gewinnt. Wer ein anderes Licht in seine Schlinge nimmt, zerreißt dessen Kette.</p>
-    <label class="field-wrap"><span class="hud-label">Dein Name</span>
-      <input class="field" id="name-in" maxlength="14" autocomplete="nickname" placeholder="Name"></label>
-    <button class="go" id="host" type="button">Raum erstellen</button>
-    <div class="or">oder</div>
+    <h2 class="cool" data-i18n="menu.friends">Mit Freunden</h2>
+    <p class="lead" data-i18n="mp.lead">Bis zu vier Lichter in einer Arena. Wer am meisten fängt, gewinnt. Wer ein anderes Licht in seine Schlinge nimmt, zerreißt dessen Kette.</p>
+    <label class="field-wrap"><span class="hud-label" data-i18n="name.label">Dein Name</span>
+      <input class="field" id="name-in" maxlength="14" autocomplete="nickname" placeholder="Name" data-i18n-ph="name.ph"></label>
+    <button class="go" id="host" type="button" data-i18n="mp.host">Raum erstellen</button>
+    <div class="or" data-i18n="mp.or">oder</div>
     <div class="join">
-      <input class="field" id="code-in" maxlength="5" autocomplete="off" placeholder="CODE" aria-label="Raum-Code">
-      <button class="alt" id="join" type="button">Beitreten</button>
+      <input class="field" id="code-in" maxlength="5" autocomplete="off" placeholder="CODE" aria-label="Raum-Code" data-i18n-aria="mp.code">
+      <button class="alt" id="join" type="button" data-i18n="mp.join">Beitreten</button>
     </div>
     <p class="status" id="mp-status" role="status"></p>
-    <button class="link" id="mp-back" type="button">Zurück</button>
+    <button class="link" id="mp-back" type="button" data-i18n="back">Zurück</button>
   </div>
 </div>
 
 <div id="lobby" class="overlay off">
   <div class="panel narrow">
-    <span class="hud-label">Raum</span>
+    <span class="hud-label" data-i18n="lobby.room">Raum</span>
     <div class="roomcode" id="room-code">-----</div>
     <div class="invite" id="invite">
-      <input class="field" id="invite-link" readonly aria-label="Einladungslink">
-      <button class="copy" id="copy" type="button">Kopieren</button>
+      <input class="field" id="invite-link" readonly aria-label="Einladungslink" data-i18n-aria="lobby.invite">
+      <button class="copy" id="copy" type="button" data-i18n="copy">Kopieren</button>
     </div>
     <ul class="plist" id="lobby-list"></ul>
-    <button class="go" id="mp-start" type="button">Runde starten</button>
+    <button class="go" id="mp-start" type="button" data-i18n="lobby.start">Runde starten</button>
     <p class="status ok" id="lobby-status" role="status"></p>
-    <button class="link" id="leave" type="button">Raum verlassen</button>
+    <button class="link" id="leave" type="button" data-i18n="lobby.leave">Raum verlassen</button>
   </div>
 </div>
 
 <div id="over" class="overlay off">
   <div class="panel">
-    <h2 id="over-title">Verglüht</h2>
+    <h2 id="over-title" data-i18n="over.burnt">Verglüht</h2>
     <div id="solo-res">
       <div id="final">0</div>
-      <div id="record" hidden>Neuer Rekord</div>
+      <div id="record" data-i18n="over.record" hidden>Neuer Rekord</div>
     </div>
     <div class="stats" id="solo-stats">
-      <div><span class="hud-label">Zeit</span><b id="st-time">0:00</b></div>
-      <div><span class="hud-label">Schlingen</span><b id="st-loops">0</b></div>
-      <div><span class="hud-label">Beste Kette</span><b id="st-mult">×1</b></div>
-      <div><span class="hud-label">Erwischt</span><b id="st-kills">0</b></div>
-      <div><span class="hud-label">Größter Fang</span><b id="st-catch">0</b></div>
-      <div><span class="hud-label">Rekord</span><b id="st-best">0</b></div>
+      <div><span class="hud-label" data-i18n="st.time">Zeit</span><b id="st-time">0:00</b></div>
+      <div><span class="hud-label" data-i18n="st.loops">Schlingen</span><b id="st-loops">0</b></div>
+      <div><span class="hud-label" data-i18n="st.mult">Beste Kette</span><b id="st-mult">×1</b></div>
+      <div><span class="hud-label" data-i18n="st.kills">Erwischt</span><b id="st-kills">0</b></div>
+      <div><span class="hud-label" data-i18n="st.catch">Größter Fang</span><b id="st-catch">0</b></div>
+      <div><span class="hud-label" data-i18n="st.best">Rekord</span><b id="st-best">0</b></div>
     </div>
-    <div class="hud-label" id="rank-title" hidden>Bestenliste der Arena</div>
+    <div class="hud-label" id="rank-title" data-i18n="rank.title" hidden>Bestenliste der Arena</div>
     <ul class="plist" id="ranking" hidden></ul>
-    <button class="go" id="again" type="button">Nochmal</button>
-    <p class="small" id="over-hint">oder Leertaste</p>
-    <button class="link" id="over-leave" type="button">Zum Menü</button>
+    <button class="go" id="again" type="button" data-i18n="again">Nochmal</button>
+    <p class="small" id="over-hint" data-i18n="over.space">oder Leertaste</p>
+    <button class="link" id="over-leave" type="button" data-i18n="over.menu">Zum Menü</button>
   </div>
 </div>
 
 <div id="pause" class="overlay off">
   <div class="panel narrow">
-    <h2 class="cool">Pause</h2>
-    <button class="go" id="resume" type="button">Weiter</button>
+    <h2 class="cool" data-i18n="pause">Pause</h2>
+    <button class="go" id="resume" type="button" data-i18n="resume">Weiter</button>
   </div>
 </div>
 
-<button id="mute" type="button" aria-label="Ton an oder aus">TON</button>
+<button id="mute" type="button" aria-label="Ton umschalten" data-i18n-aria="mute">TON</button>
 
 <script>
 /* Lichtschlinge – gemeinsame Simulation für den Browser (allein, Host) und den Arena-Server. */
@@ -765,24 +768,166 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const TAU = Math.PI * 2;
 
+// ---------- Sprache ----------
+const I18N = {
+  de: {
+    'hud.points': 'Punkte', 'hud.chain': 'Kette', 'hud.best': 'Rekord', 'hud.lights': 'Lichter', 'hud.arena': 'Arena',
+    'hud.arenaCount': n => 'Arena · ' + n + (n === 1 ? ' Licht' : ' Lichter'),
+    'menu.lead': 'Dein Licht zieht einen Schweif. Kreuzt er sich selbst, schließt sich die Schlinge – und alles darin verglüht.',
+    'r.mouse': 'Maus', 'r.mouse.d': 'Das Licht folgt dem Zeiger. Kreise Gegner ein.',
+    'r.click': 'Klick', 'r.click.d': 'Schockwelle stößt Gegner weg, lädt sich durch Treffer auf.',
+    'r.chain': 'Kette', 'r.chain.d': 'Jede volle Schlinge erhöht den Multiplikator und verlängert den Schweif.',
+    'r.warn': 'Achtung', 'r.warn.d': 'Eine Berührung und es ist vorbei. Rote Klingen zerschneiden den Schweif.',
+    'menu.solo': 'Allein spielen', 'menu.arena': 'Arena', 'menu.friends': 'Mit Freunden', 'menu.best': 'Rekord allein:',
+    'menu.quit': 'Beenden', 'menu.lang': 'English',
+    'arena.lead': 'Eine riesige Welt für bis zu 200 Lichter. Fang Gegner, zerreiß fremde Ketten und kletter in der Rangliste nach oben. Wer verglüht, steigt sofort wieder ein.',
+    'name.label': 'Dein Name', 'name.ph': 'Name', 'arena.join': 'Arena betreten', 'back': 'Zurück',
+    'mp.lead': 'Bis zu vier Lichter in einer Arena. Wer am meisten fängt, gewinnt. Wer ein anderes Licht in seine Schlinge nimmt, zerreißt dessen Kette.',
+    'mp.host': 'Raum erstellen', 'mp.or': 'oder', 'mp.code': 'Raum-Code', 'mp.join': 'Beitreten',
+    'lobby.room': 'Raum', 'lobby.invite': 'Einladungslink', 'copy': 'Kopieren', 'copied': 'Kopiert',
+    'lobby.start': 'Runde starten', 'lobby.leave': 'Raum verlassen',
+    'over.burnt': 'Verglüht', 'over.record': 'Neuer Rekord',
+    'st.time': 'Zeit', 'st.loops': 'Schlingen', 'st.mult': 'Beste Kette', 'st.kills': 'Erwischt', 'st.catch': 'Größter Fang', 'st.best': 'Rekord',
+    'rank.title': 'Bestenliste der Arena', 'again': 'Nochmal', 'over.space': 'oder Leertaste', 'over.menu': 'Zum Menü',
+    'pause': 'Pause', 'resume': 'Weiter', 'mute': 'Ton umschalten',
+    'sound.all': 'TON', 'sound.fx': 'FX', 'sound.off': 'AUS',
+    'fx.burnt': n => n + ' verglüht', 'fx.chainBroken': 'KETTE ZERRISSEN', 'fx.caught': (n, b) => n + ' GEFANGEN +' + b,
+    'catch': n => n >= 8 ? 'SUPERNOVA' : n >= 6 ? 'GEWALTIG' : ['', '', 'DOPPELT', 'DREIFACH', 'VIERFACH', 'FÜNFFACH'][n],
+    'err.room404': c => 'Raum ' + c + ' nicht gefunden. Code prüfen oder neu erstellen lassen.',
+    'err.webrtc': 'Dieser Browser unterstützt keine direkten Verbindungen (WebRTC).',
+    'err.signal': 'Keine Verbindung zum Vermittlungsserver. Internetverbindung prüfen und erneut versuchen.',
+    'err.generic': c => 'Verbindung fehlgeschlagen (' + (c || 'unbekannt') + '). Bitte erneut versuchen.',
+    'err.nortc': 'Mehrspieler braucht direkte Browser-Verbindungen (WebRTC). Hier sind sie gesperrt – öffne das Spiel auf toyyoda.github.io/Game.',
+    'err.lib': 'Die Mehrspieler-Bibliothek konnte nicht geladen werden. Internetverbindung prüfen.',
+    'err.code5': 'Der Raum-Code hat fünf Zeichen.',
+    'mp.creating': 'Raum wird erstellt …', 'mp.connecting': c => 'Verbinde mit Raum ' + c + ' …',
+    'mp.noAnswer': c => 'Keine Antwort von Raum ' + c + '. Ist der Host noch da?',
+    'mp.full': 'Der Raum ist voll (4 Lichter).', 'mp.lost': 'Die Verbindung zum Host ist abgerissen.', 'mp.enterName': 'Gib deinen Namen ein und tritt bei.',
+    'arena.noServer': 'Der Arena-Server ist noch nicht eingerichtet.', 'arena.asking': 'Frage den Server …',
+    'arena.online': (n, m) => n + ' von ' + m + ' Lichtern in der Arena',
+    'arena.waking': 'Der Server antwortet noch nicht. Nach längerer Pause braucht er bis zu einer Minute zum Aufwachen.',
+    'arena.connecting': 'Verbinde mit der Arena …', 'arena.badUrl': 'Die Adresse des Arena-Servers ist ungültig.',
+    'arena.full': 'Die Arena ist gerade voll. Versuch es gleich noch einmal.', 'arena.lost': 'Die Verbindung zur Arena ist abgerissen.',
+    'arena.closed': 'Der Server hat die Verbindung beendet.',
+    'arena.unreachable': 'Keine Verbindung zum Arena-Server. Nach längerer Pause wacht er erst auf – in einer Minute erneut versuchen.',
+    'you': 'du', 'you.solo': 'Du', 'name.default': 'Licht',
+    'hint.spectate': 'Du bist verglüht – die anderen spielen noch', 'hint.loop': 'Kreise Gegner mit deinem Lichtschweif ein', 'hint.pulse': 'Klick: Schockwelle, wenn der Ring voll ist',
+    'rank.sub': (m, k, st) => '×' + m + ' · ' + k + ' erwischt' + (st ? ' · ' + st + (st === 1 ? ' Kette' : ' Ketten') + ' zerrissen' : ''),
+    'over.won': 'Gewonnen!', 'over.wins': n => n + ' gewinnt', 'over.roundOver': 'Runde vorbei',
+    'over.hostNext': 'Der Host startet die nächste Runde.', 'over.arenaHint': (r, n) => 'Platz ' + r + ' von ' + n + ' · Leertaste für den nächsten Versuch',
+    'over.leaveArena': 'Arena verlassen',
+    'lobby.hostAlone': 'Schick den Link oder Code an deine Freunde. Du kannst auch allein starten.',
+    'lobby.count': n => n + ' von 4 Lichtern im Raum.',
+    'lobby.running': 'Eine Runde läuft gerade – du bist bei der nächsten dabei.', 'lobby.wait': 'Warte, bis der Host die Runde startet …'
+  },
+  en: {
+    'hud.points': 'Score', 'hud.chain': 'Chain', 'hud.best': 'Best', 'hud.lights': 'Lights', 'hud.arena': 'Arena',
+    'hud.arenaCount': n => 'Arena · ' + n + (n === 1 ? ' light' : ' lights'),
+    'menu.lead': 'Your light leaves a trail. When the trail crosses itself, the loop closes – and everything inside burns up.',
+    'r.mouse': 'Mouse', 'r.mouse.d': 'Your light follows the pointer. Circle around enemies.',
+    'r.click': 'Click', 'r.click.d': 'A shockwave pushes enemies away. It recharges as you catch them.',
+    'r.chain': 'Chain', 'r.chain.d': 'Every loop that catches something raises the multiplier and lengthens your trail.',
+    'r.warn': 'Careful', 'r.warn.d': 'One touch and it’s over. Red blades cut your trail.',
+    'menu.solo': 'Play solo', 'menu.arena': 'Arena', 'menu.friends': 'With friends', 'menu.best': 'Solo best:',
+    'menu.quit': 'Quit', 'menu.lang': 'Deutsch',
+    'arena.lead': 'A huge world for up to 200 lights. Catch enemies, break other players’ chains and climb the leaderboard. Burn out and you’re straight back in.',
+    'name.label': 'Your name', 'name.ph': 'Name', 'arena.join': 'Enter arena', 'back': 'Back',
+    'mp.lead': 'Up to four lights in one arena. Whoever catches the most wins. Catch another light in your loop to break its chain.',
+    'mp.host': 'Create room', 'mp.or': 'or', 'mp.code': 'Room code', 'mp.join': 'Join',
+    'lobby.room': 'Room', 'lobby.invite': 'Invite link', 'copy': 'Copy', 'copied': 'Copied',
+    'lobby.start': 'Start round', 'lobby.leave': 'Leave room',
+    'over.burnt': 'Burnt out', 'over.record': 'New best',
+    'st.time': 'Time', 'st.loops': 'Loops', 'st.mult': 'Best chain', 'st.kills': 'Caught', 'st.catch': 'Biggest catch', 'st.best': 'Best',
+    'rank.title': 'Arena leaderboard', 'again': 'Again', 'over.space': 'or press Space', 'over.menu': 'Main menu',
+    'pause': 'Paused', 'resume': 'Resume', 'mute': 'Toggle sound',
+    'sound.all': 'ON', 'sound.fx': 'FX', 'sound.off': 'OFF',
+    'fx.burnt': n => n + ' burnt out', 'fx.chainBroken': 'CHAIN BROKEN', 'fx.caught': (n, b) => n + ' CAUGHT +' + b,
+    'catch': n => n >= 8 ? 'SUPERNOVA' : n >= 6 ? 'MASSIVE' : ['', '', 'DOUBLE', 'TRIPLE', 'QUADRUPLE', 'QUINTUPLE'][n],
+    'err.room404': c => 'Room ' + c + ' not found. Check the code or ask for a new room.',
+    'err.webrtc': 'This browser doesn’t support direct connections (WebRTC).',
+    'err.signal': 'Can’t reach the matchmaking server. Check your internet connection and try again.',
+    'err.generic': c => 'Connection failed (' + (c || 'unknown') + '). Please try again.',
+    'err.nortc': 'Multiplayer needs direct browser connections (WebRTC), which are blocked here. Open the game at toyyoda.github.io/Game.',
+    'err.lib': 'Couldn’t load the multiplayer library. Check your internet connection.',
+    'err.code5': 'Room codes have five characters.',
+    'mp.creating': 'Creating room …', 'mp.connecting': c => 'Connecting to room ' + c + ' …',
+    'mp.noAnswer': c => 'No answer from room ' + c + '. Is the host still there?',
+    'mp.full': 'The room is full (4 lights).', 'mp.lost': 'Lost the connection to the host.', 'mp.enterName': 'Enter your name and join.',
+    'arena.noServer': 'The arena server isn’t set up yet.', 'arena.asking': 'Asking the server …',
+    'arena.online': (n, m) => n + ' of ' + m + ' lights in the arena',
+    'arena.waking': 'The server isn’t answering yet. After a long break it needs up to a minute to wake up.',
+    'arena.connecting': 'Connecting to the arena …', 'arena.badUrl': 'The arena server address is invalid.',
+    'arena.full': 'The arena is full right now. Try again in a moment.', 'arena.lost': 'Lost the connection to the arena.',
+    'arena.closed': 'The server closed the connection.',
+    'arena.unreachable': 'Can’t reach the arena server. After a long break it has to wake up first – try again in a minute.',
+    'you': 'you', 'you.solo': 'You', 'name.default': 'Light',
+    'hint.spectate': 'You burnt out – the others are still playing', 'hint.loop': 'Circle enemies with your trail of light', 'hint.pulse': 'Click: shockwave when the ring is full',
+    'rank.sub': (m, k, st) => '×' + m + ' · ' + k + ' caught' + (st ? ' · ' + st + (st === 1 ? ' chain' : ' chains') + ' broken' : ''),
+    'over.won': 'You win!', 'over.wins': n => n + ' wins', 'over.roundOver': 'Round over',
+    'over.hostNext': 'The host starts the next round.', 'over.arenaHint': (r, n) => 'Rank ' + r + ' of ' + n + ' · Space for another try',
+    'over.leaveArena': 'Leave arena',
+    'lobby.hostAlone': 'Send the link or code to your friends. You can also start on your own.',
+    'lobby.count': n => n + ' of 4 lights in the room.',
+    'lobby.running': 'A round is in progress – you’ll join the next one.', 'lobby.wait': 'Waiting for the host to start the round …'
+  }
+};
+let lang = 'de';
+function t(key, ...args) {
+  const v = (I18N[lang] && key in I18N[lang]) ? I18N[lang][key] : I18N.de[key];
+  return typeof v === 'function' ? v(...args) : v;
+}
+window.__lsT = t;
+function applyLang() {
+  document.documentElement.lang = lang;
+  for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+  for (const el of document.querySelectorAll('[data-i18n-ph]')) el.placeholder = t(el.dataset.i18nPh);
+  for (const el of document.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label', t(el.dataset.i18nAria));
+}
+
 const store = {
   get(k, d) { try { const v = localStorage.getItem('lichtschlinge.' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('lichtschlinge.' + k, JSON.stringify(v)); } catch (e) {} }
 };
 
+lang = store.get('lang', (navigator.language || 'de').toLowerCase().startsWith('de') ? 'de' : 'en');
+if (!I18N[lang]) lang = 'en';
+applyLang();
+
 // ---------- Ton (WebAudio-Synth, kein Download) ----------
-let ac = null, master = null, muted = store.get('muted', false);
+// Ton-Stufen: all = Musik und Effekte, fx = nur Effekte, off = stumm
+let ac = null, master = null;
+let soundMode = store.get('sound', store.get('muted', false) ? 'off' : 'all');
+const muted = () => soundMode === 'off';
+
+// Hintergrundmusik: eine schleifenfähige Datei; fehlt sie, bleibt es einfach still
+const MUSIC_SRC = 'music/theme.mp3';
+let music = null, musicFailed = false;
+function startMusic() {
+  if (music || musicFailed) return;
+  music = new Audio(MUSIC_SRC);
+  music.loop = true; music.preload = 'auto'; music.volume = 0;
+  music.addEventListener('error', () => { musicFailed = true; music = null; });
+}
+// Lautstärke weich nachführen: im Spiel voll, in Menüs und Pausen gedämpft
+function musicTick(dt) {
+  if (!music) return;
+  const target = soundMode !== 'all' ? 0 : (state === 'play' && !paused) ? 0.55 : 0.25;
+  music.volume = clamp(music.volume + (target - music.volume) * Math.min(1, dt * 2.5), 0, 1);
+  if (target > 0 && music.paused) music.play().catch(() => {});
+  else if (target === 0 && music.volume < 0.01 && !music.paused) music.pause();
+}
 function initAudio() {
+  startMusic();
   if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
   try {
     ac = new (window.AudioContext || window.webkitAudioContext)();
-    master = ac.createGain(); master.gain.value = muted ? 0 : 0.45;
+    master = ac.createGain(); master.gain.value = muted() ? 0 : 0.45;
     const comp = ac.createDynamicsCompressor();
     master.connect(comp); comp.connect(ac.destination);
   } catch (e) { ac = null; }
 }
 function tone(f, dur, o = {}) {
-  if (!ac || muted) return;
+  if (!ac || muted()) return;
   const t = ac.currentTime + (o.delay || 0);
   const osc = ac.createOscillator(), g = ac.createGain();
   osc.type = o.type || 'sine';
@@ -797,7 +942,7 @@ function tone(f, dur, o = {}) {
 }
 let noiseBuf = null;
 function noise(dur, vol, from, to) {
-  if (!ac || muted) return;
+  if (!ac || muted()) return;
   if (!noiseBuf) {
     noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
     const d = noiseBuf.getChannelData(0);
@@ -832,12 +977,15 @@ const sfx = {
   caught() { tone(520, 0.15, { type: 'square', vol: 0.06, slide: 260 }); tone(260, 0.3, { type: 'square', vol: 0.05, slide: 120, delay: 0.12 }); },
   join() { tone(660, 0.1, { vol: 0.06 }); tone(990, 0.14, { vol: 0.06, delay: 0.08 }); }
 };
-function updateMuteBtn() { $('mute').textContent = muted ? 'AUS' : 'TON'; }
+function updateMuteBtn() { $('mute').textContent = t('sound.' + soundMode); }
 updateMuteBtn();
 function toggleMute() {
-  muted = !muted; store.set('muted', muted); updateMuteBtn();
-  initAudio(); if (master) master.gain.value = muted ? 0 : 0.45;
+  soundMode = soundMode === 'all' ? 'fx' : soundMode === 'fx' ? 'off' : 'all';
+  store.set('sound', soundMode); updateMuteBtn();
+  initAudio(); if (master) master.gain.value = muted() ? 0 : 0.45;
 }
+// Erste Berührung irgendwo schaltet den Ton frei (Browser erlauben Ton erst nach einer Eingabe)
+window.addEventListener('pointerdown', () => initAudio(), { once: true, capture: true });
 
 // ---------- Spiellogik aus sim.js ----------
 const { TYPES, TYPE_KEYS, PHASES, PLAYER_HUES, COMBO_T, TRAIL_LIFE, BOMB_R, PULSE_R, trailMax, segInter, segDist, polyArea, flat, unflat, World } = window.LS;
@@ -986,7 +1134,7 @@ function implode(poly, c, h) {
 function nameOf(id) {
   const v = view.players.get(id);
   if (v && v.name) return v.name;
-  return (roster.find(r => r.id === id) || {}).name || 'Licht';
+  return (roster.find(r => r.id === id) || {}).name || t('name.default');
 }
 function hueOf(id) {
   const v = view.players.get(id);
@@ -1013,7 +1161,8 @@ function fx(ev) {
         implode(poly, c, ev.h);
         const big = mine ? 1 : 0.75;
         addText(c.x, c.y, '+' + ev.gain, mine ? 45 : ev.h, (26 + Math.min(ev.n, 8) * 3) * big);
-        if (ev.label) addText(c.x, c.y - 30 - Math.min(ev.n, 8) * 2.5, ev.label, ev.h, (16 + Math.min(ev.n, 8) * 2) * big);
+        const label = t('catch', ev.n);
+        if (label) addText(c.x, c.y - 30 - Math.min(ev.n, 8) * 2.5, label, ev.h, (16 + Math.min(ev.n, 8) * 2) * big);
         gridImpulse(c.x, c.y, 200 + ev.n * 20, 380 + ev.n * 60);
         sfx.loop(ev.n, ev.m, !mine);
         if (mine) {
@@ -1039,14 +1188,14 @@ function fx(ev) {
       burst(ev.x, ev.y, ev.h, 60, 60, 500);
       rings.push({ x: ev.x, y: ev.y, r: 5, max: 260, life: 0.8, t: 0, hue: ev.h, wide: true });
       gridImpulse(ev.x, ev.y, 300, 900); sfx.otherDie();
-      addText(ev.x, ev.y - 30, nameOf(ev.id) + ' verglüht', ev.h, 15);
+      addText(ev.x, ev.y - 30, t('fx.burnt', nameOf(ev.id)), ev.h, 15);
       break;
     case 'g':
       addPart(ev.x, ev.y, rand(-40, 40), rand(-40, 40), 0.3, 55, 2);
       if (mine) sfx.gem();
       break;
     case 'pv':
-      addText(ev.x, ev.y - 26, mine ? 'KETTE ZERRISSEN' : nameOf(ev.id) + ' GEFANGEN +' + ev.bonus, mine ? 330 : hueOf(ev.by), mine ? 20 : 15);
+      addText(ev.x, ev.y - 26, mine ? t('fx.chainBroken') : t('fx.caught', nameOf(ev.id), ev.bonus), mine ? 330 : hueOf(ev.by), mine ? 20 : 15);
       rings.push({ x: ev.x, y: ev.y, r: 8, max: 70, life: 0.5, t: 0, hue: hueOf(ev.by) });
       if (mine || ev.by === me.id) sfx.caught();
       break;
@@ -1193,18 +1342,19 @@ function peerOptions() {
 function newCode() { let s = ''; for (let i = 0; i < 5; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]; return s; }
 function mpStatus(msg, ok) { const el = $('mp-status'); el.textContent = msg || ''; el.classList.toggle('ok', !!ok); }
 function peerErrorText(e) {
+  const tr = window.__lsT;
   const t = e && e.type;
-  if (t === 'peer-unavailable') return 'Raum ' + roomCode + ' nicht gefunden. Code prüfen oder neu erstellen lassen.';
-  if (t === 'browser-incompatible') return 'Dieser Browser unterstützt keine direkten Verbindungen (WebRTC).';
-  if (t === 'network' || t === 'server-error' || t === 'socket-error' || t === 'socket-closed') return 'Keine Verbindung zum Vermittlungsserver. Internetverbindung prüfen und erneut versuchen.';
-  return 'Verbindung fehlgeschlagen (' + (t || 'unbekannt') + '). Bitte erneut versuchen.';
+  if (t === 'peer-unavailable') return tr('err.room404', roomCode);
+  if (t === 'browser-incompatible') return tr('err.webrtc');
+  if (t === 'network' || t === 'server-error' || t === 'socket-error' || t === 'socket-closed') return tr('err.signal');
+  return tr('err.generic', t);
 }
 function mpAvailable() {
-  if (!window.RTCPeerConnection) { mpStatus('Mehrspieler braucht direkte Browser-Verbindungen (WebRTC). Hier sind sie gesperrt – öffne das Spiel auf toyyoda.github.io/Game.'); return false; }
+  if (!window.RTCPeerConnection) { mpStatus(t('err.nortc')); return false; }
   return true;
 }
 function playerName(inputId) {
-  const n = $(inputId || 'name-in').value.trim().slice(0, 14) || 'Licht';
+  const n = $(inputId || 'name-in').value.trim().slice(0, 14) || t('name.default');
   store.set('name', n);
   $('name-in').value = $('arena-name').value = n;
   return n;
@@ -1226,8 +1376,8 @@ async function hostRoom() {
   initAudio();
   const name = playerName();
   $('host').disabled = $('join').disabled = true;
-  mpStatus('Raum wird erstellt …', true);
-  try { await loadPeer(); } catch (e) { mpStatus('Die Mehrspieler-Bibliothek konnte nicht geladen werden. Internetverbindung prüfen.'); $('host').disabled = $('join').disabled = false; return; }
+  mpStatus(t('mp.creating'), true);
+  try { await loadPeer(); } catch (e) { mpStatus(t('err.lib')); $('host').disabled = $('join').disabled = false; return; }
   const tryOpen = attempt => {
     roomCode = newCode();
     peer = new Peer(ROOM_PREFIX + roomCode, peerOptions());
@@ -1293,15 +1443,15 @@ async function joinRoom() {
   if (!mpAvailable()) return;
   initAudio();
   const code = $('code-in').value.trim().toUpperCase();
-  if (code.length !== 5) { mpStatus('Der Raum-Code hat fünf Zeichen.'); return; }
+  if (code.length !== 5) { mpStatus(t('err.code5')); return; }
   const name = playerName();
   roomCode = code;
   $('host').disabled = $('join').disabled = true;
-  mpStatus('Verbinde mit Raum ' + code + ' …', true);
-  try { await loadPeer(); } catch (e) { mpStatus('Die Mehrspieler-Bibliothek konnte nicht geladen werden. Internetverbindung prüfen.'); $('host').disabled = $('join').disabled = false; return; }
+  mpStatus(t('mp.connecting', code), true);
+  try { await loadPeer(); } catch (e) { mpStatus(t('err.lib')); $('host').disabled = $('join').disabled = false; return; }
   peer = new Peer(peerOptions());
   const fail = msg => { mpStatus(msg); $('host').disabled = $('join').disabled = false; try { peer && peer.destroy(); } catch (x) {} peer = null; };
-  const timer = setTimeout(() => { if (state === 'mp' && peer) fail('Keine Antwort von Raum ' + code + '. Ist der Host noch da?'); }, 15000);
+  const timer = setTimeout(() => { if (state === 'mp' && peer) fail(t('mp.noAnswer', code)); }, 15000);
   peer.on('open', () => {
     hostConn = peer.connect(ROOM_PREFIX + code, { reliable: true });
     hostConn.on('open', () => hostConn.send({ t: 'hello', name }));
@@ -1316,7 +1466,7 @@ function clientRecv(m) {
   if (!m || typeof m !== 'object') return;
   switch (m.t) {
     case 'full':
-      mpStatus('Der Raum ist voll (4 Lichter).');
+      mpStatus(t('mp.full'));
       $('host').disabled = $('join').disabled = false;
       break;
     case 'welcome':
@@ -1347,7 +1497,7 @@ function connectionLost() {
   disconnect();
   goMenu();
   showPanel('mp');
-  mpStatus('Die Verbindung zum Host ist abgerissen.');
+  mpStatus(t('mp.lost'));
   setTimeout(() => { lostShown = false; }, 500);
 }
 
@@ -1406,22 +1556,22 @@ function arenaStatus(msg, ok) { const el = $('arena-status'); el.textContent = m
 function viewSize() { const s = camScale(); return { vw: Math.round(W / s), vh: Math.round(H / s) }; }
 function refreshOnline() {
   const url = arenaUrl(), el = $('arena-online');
-  if (!url) { el.textContent = ''; arenaStatus('Der Arena-Server ist noch nicht eingerichtet.'); $('arena-join').disabled = true; return; }
+  if (!url) { el.textContent = ''; arenaStatus(t('arena.noServer')); $('arena-join').disabled = true; return; }
   $('arena-join').disabled = false;
-  el.textContent = 'Frage den Server …';
+  el.textContent = t('arena.asking');
   fetch(url.replace(/^ws/, 'http').replace(/\/$/, '') + '/status').then(r => r.json()).then(st => {
-    el.textContent = st.players + ' von ' + st.max + ' Lichtern in der Arena';
-  }).catch(() => { el.textContent = 'Der Server antwortet noch nicht. Nach längerer Pause braucht er bis zu einer Minute zum Aufwachen.'; });
+    el.textContent = t('arena.online', st.players, st.max);
+  }).catch(() => { el.textContent = t('arena.waking'); });
 }
 function joinArena() {
   const url = arenaUrl();
-  if (!url) { arenaStatus('Der Arena-Server ist noch nicht eingerichtet.'); return; }
+  if (!url) { arenaStatus(t('arena.noServer')); return; }
   initAudio();
   const name = playerName('arena-name');
   $('arena-join').disabled = true; closeReason = '';
-  arenaStatus('Verbinde mit der Arena …', true);
+  arenaStatus(t('arena.connecting'), true);
   let sock;
-  try { sock = new WebSocket(url); } catch (e) { arenaStatus('Die Adresse des Arena-Servers ist ungültig.'); $('arena-join').disabled = false; return; }
+  try { sock = new WebSocket(url); } catch (e) { arenaStatus(t('arena.badUrl')); $('arena-join').disabled = false; return; }
   ws = sock;
   let opened = false;
   sock.onopen = () => { opened = true; const v = viewSize(); sock.send(JSON.stringify({ t: 'hello', v: 1, name, vw: v.vw, vh: v.vh })); };
@@ -1432,10 +1582,7 @@ function joinArena() {
     leaveArena();
     if (wasIn) { goMenu(); state = 'arena'; showPanel('arena'); }
     $('arena-join').disabled = false;
-    arenaStatus(closeReason === 'full' ? 'Die Arena ist gerade voll. Versuch es gleich noch einmal.'
-      : wasIn ? 'Die Verbindung zur Arena ist abgerissen.'
-      : opened ? 'Der Server hat die Verbindung beendet.'
-      : 'Keine Verbindung zum Arena-Server. Nach längerer Pause wacht er erst auf – in einer Minute erneut versuchen.');
+    arenaStatus(t(closeReason === 'full' ? 'arena.full' : wasIn ? 'arena.lost' : opened ? 'arena.closed' : 'arena.unreachable'));
   };
 }
 function arenaRecv(m) {
@@ -1492,7 +1639,7 @@ function hostTick(now) {
 // ---------- HUD ----------
 const elScore = $('score'), elMult = $('mult'), elFill = $('mult-fill'), elBest = $('best'), elBoard = $('board');
 let shownScore = -1, shownMult = -1, boardKey = '';
-function fmt(n) { return n.toLocaleString('de-DE'); }
+function fmt(n) { return n.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US'); }
 function updateHud() {
   const rec = myRec();
   const score = rec ? rec.score : 0, mult = rec ? rec.mult : 1;
@@ -1514,7 +1661,7 @@ function updateHud() {
     const d = document.createElement('div');
     if (!p.alive) d.className = 'out';
     const dot = document.createElement('span'); dot.className = 'dot'; dot.style.setProperty('--c', 'hsl(' + hueOf(p.id) + ',100%,62%)');
-    const n = document.createElement('span'); n.textContent = nameOf(p.id) + (p.id === me.id ? ' (du)' : '');
+    const n = document.createElement('span'); n.textContent = nameOf(p.id) + (p.id === me.id ? ' (' + t('you') + ')' : '');
     const b = document.createElement('b'); b.textContent = fmt(p.score);
     d.append(n, dot, b); elBoard.append(d);
   }
@@ -1534,10 +1681,11 @@ function updateArenaBoard(score) {
   const key = lb.top.slice(0, 5).map(t => t[0] + ':' + t[3]).join('|') + '#' + lb.rank + '#' + lb.alive + '#' + score;
   if (key === boardKey) return;
   boardKey = key;
-  $('best-label').textContent = 'Arena · ' + lb.alive + (lb.alive === 1 ? ' Licht' : ' Lichter');
+  $('best-label').textContent = t('hud.arenaCount', lb.alive);
   elBoard.innerHTML = '';
-  lb.top.slice(0, 5).forEach((t, i) => elBoard.append(boardRow((i + 1) + '. ' + t[1] + (t[0] === me.id ? ' (du)' : ''), t[2], t[3], t[0] === me.id ? 'me' : '')));
-  if (lb.rank > 5) elBoard.append(boardRow(lb.rank + '. Du', me.hue, score, 'me'));
+  const tt = t;
+  lb.top.slice(0, 5).forEach((t, i) => elBoard.append(boardRow((i + 1) + '. ' + t[1] + (t[0] === me.id ? ' (' + tt('you') + ')' : ''), t[2], t[3], t[0] === me.id ? 'me' : '')));
+  if (lb.rank > 5) elBoard.append(boardRow(lb.rank + '. ' + t('you.solo'), me.hue, score, 'me'));
 }
 
 // ---------- Update ----------
@@ -1800,9 +1948,9 @@ function drawHint() {
   if (state !== 'play') return;
   let msg = '', a = 1;
   const gt = gameTime();
-  if (!me.alive && (mode === 'host' || mode === 'client')) msg = 'Du bist verglüht – die anderen spielen noch';
+  if (!me.alive && (mode === 'host' || mode === 'client')) msg = t('hint.spectate');
   else if (firstGame && gt < 14) {
-    msg = gt < 7 ? 'Kreise Gegner mit deinem Lichtschweif ein' : 'Klick: Schockwelle, wenn der Ring voll ist';
+    msg = gt < 7 ? t('hint.loop') : t('hint.pulse');
     a = gt < 7 ? Math.min(1, gt * 2, (7 - gt) * 2) : Math.min(1, (gt - 7) * 2, (14 - gt) * 2);
   }
   if (!msg) return;
@@ -1910,11 +2058,11 @@ function goMenu() {
 function startSolo(e) {
   initAudio();
   mode = 'solo'; me.id = 1; me.hue = 190;
-  roster = [{ id: 1, name: 'Du', hue: 190 }];
+  roster = [{ id: 1, name: t('you.solo'), hue: 190 }];
   setArena('screen');
   if (e && e.clientX) setMouse(e, true);
   world = new World({ w: AW, h: AH, solo: true });
-  world.addPlayer(1, 'Du', 190);
+  world.addPlayer(1, t('you.solo'), 190);
   world.start();
   beginPlay();
 }
@@ -1928,7 +2076,7 @@ function beginPlay() {
   else if (rec) { P.x = rec.x; P.y = rec.y; mouse.x = P.x; mouse.y = P.y; mouse.sx = vox + P.x * vs; mouse.sy = voy + P.y * vs; }
   parts = []; texts = []; flashes = []; rings = [];
   shownScore = shownMult = -1; boardKey = '';
-  $('best-label').textContent = mode === 'solo' ? 'Rekord' : mode === 'arena' ? 'Arena' : 'Lichter';
+  $('best-label').textContent = t(mode === 'solo' ? 'hud.best' : mode === 'arena' ? 'hud.arena' : 'hud.lights');
   $('best').hidden = mode !== 'solo'; elBoard.hidden = mode === 'solo';
   showPanel(null);
   body.classList.add('playing'); body.classList.remove('paused', 'spectating');
@@ -1959,7 +2107,7 @@ function rankRow(r, i, isMe) {
   const dot = document.createElement('span'); dot.className = 'dot'; dot.style.setProperty('--c', 'hsl(' + r.hue + ',100%,62%)');
   const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = r.name;
   const sub = document.createElement('span'); sub.className = 'sub';
-  sub.textContent = '×' + r.multMax + ' · ' + r.kills + ' erwischt' + (r.steals ? ' · ' + r.steals + (r.steals === 1 ? ' Kette' : ' Ketten') + ' zerrissen' : '');
+  sub.textContent = t('rank.sub', r.multMax, r.kills, r.steals);
   const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = fmt(r.score);
   li.append(pl, dot, nm, sub, sc);
   return li;
@@ -1973,7 +2121,7 @@ function showOver(res, extra) {
     let isRecord;
     if (arena) isRecord = extra.record;
     else { isRecord = r.score > best; if (isRecord) { best = r.score; store.set('best', best); } }
-    $('over-title').textContent = 'Verglüht';
+    $('over-title').textContent = t('over.burnt');
     $('final').textContent = fmt(r.score);
     $('record').hidden = !(isRecord && r.score > 0);
     $('st-time').textContent = Math.floor(r.time / 60) + ':' + String(Math.floor(r.time % 60)).padStart(2, '0');
@@ -1987,7 +2135,7 @@ function showOver(res, extra) {
     if (arena) hall.forEach((h, i) => ul.append(rankRow(h, i, false)));
   } else {
     const win = res[0];
-    $('over-title').textContent = win && win.id === me.id ? 'Gewonnen!' : (win ? nameOf(win.id) + ' gewinnt' : 'Runde vorbei');
+    $('over-title').textContent = win && win.id === me.id ? t('over.won') : (win ? t('over.wins', nameOf(win.id)) : t('over.roundOver'));
     const ul = $('ranking'); ul.innerHTML = '';
     res.forEach((r, i) => ul.append(rankRow(r, i, r.id === me.id)));
   }
@@ -1996,9 +2144,8 @@ function showOver(res, extra) {
   $('solo-res').hidden = !single; $('solo-stats').hidden = !single;
   $('ranking').hidden = solo || (arena && !hall.length); $('rank-title').hidden = !(arena && hall.length);
   $('again').hidden = mode === 'client';
-  $('over-hint').textContent = mode === 'client' ? 'Der Host startet die nächste Runde.'
-    : arena ? 'Platz ' + extra.rank + ' von ' + extra.n + ' · Leertaste für den nächsten Versuch' : 'oder Leertaste';
-  $('over-leave').textContent = solo ? 'Zum Menü' : arena ? 'Arena verlassen' : 'Raum verlassen';
+  $('over-hint').textContent = mode === 'client' ? t('over.hostNext') : arena ? t('over.arenaHint', extra.rank, extra.n) : t('over.space');
+  $('over-leave').textContent = t(solo ? 'over.menu' : arena ? 'over.leaveArena' : 'lobby.leave');
   showPanel('over');
   if (mode !== 'client') setTimeout(() => $('again').focus({ preventScroll: true }), 50);
 }
@@ -2019,12 +2166,12 @@ function renderLobby(playing) {
   for (const r of roster) {
     const li = document.createElement('li'); if (r.id === me.id) li.className = 'me';
     const dot = document.createElement('span'); dot.className = 'dot'; dot.style.setProperty('--c', 'hsl(' + r.hue + ',100%,62%)');
-    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = r.name + (r.id === me.id ? ' (du)' : '') + (r.id === 1 ? ' · Host' : '');
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = r.name + (r.id === me.id ? ' (' + t('you') + ')' : '') + (r.id === 1 ? ' · Host' : '');
     li.append(dot, nm); ul.append(li);
   }
   const st = $('lobby-status');
-  if (mode === 'host') st.textContent = roster.length < 2 ? 'Schick den Link oder Code an deine Freunde. Du kannst auch allein starten.' : roster.length + ' von 4 Lichtern im Raum.';
-  else st.textContent = playing ? 'Eine Runde läuft gerade – du bist bei der nächsten dabei.' : 'Warte, bis der Host die Runde startet …';
+  if (mode === 'host') st.textContent = roster.length < 2 ? t('lobby.hostAlone') : t('lobby.count', roster.length);
+  else st.textContent = t(playing ? 'lobby.running' : 'lobby.wait');
 }
 function leaveRoom() { if (mode === 'arena') leaveArena(); else disconnect(); goMenu(); }
 function again(e) { if (mode === 'host') hostStartRound(); else if (mode === 'arena') arenaRespawn(); else if (mode === 'solo') startSolo(e); }
@@ -2032,6 +2179,12 @@ function again(e) { if (mode === 'host') hostStartRound(); else if (mode === 'ar
 $('start').addEventListener('click', startSolo);
 $('again').addEventListener('click', again);
 $('quit').addEventListener('click', quitApp);
+$('lang').addEventListener('click', () => {
+  lang = lang === 'de' ? 'en' : 'de';
+  store.set('lang', lang);
+  applyLang(); updateMuteBtn();
+  $('menu-best').textContent = fmt(best);
+});
 $('to-arena').addEventListener('click', () => { state = 'arena'; showPanel('arena'); arenaStatus(''); refreshOnline(); setTimeout(() => $('arena-name').focus(), 50); });
 $('arena-back').addEventListener('click', () => goMenu());
 $('arena-join').addEventListener('click', joinArena);
@@ -2046,7 +2199,7 @@ $('leave').addEventListener('click', leaveRoom);
 $('over-leave').addEventListener('click', leaveRoom);
 $('copy').addEventListener('click', () => {
   const inp = $('invite-link'), btn = $('copy');
-  const done = () => { btn.textContent = 'Kopiert'; setTimeout(() => { btn.textContent = 'Kopieren'; }, 1500); };
+  const done = () => { btn.textContent = t('copied'); setTimeout(() => { btn.textContent = t('copy'); }, 1500); };
   try { navigator.clipboard.writeText(inp.value).then(done, () => { inp.select(); }); } catch (e) { inp.select(); }
 });
 $('resume').addEventListener('click', e => { e.stopPropagation(); setPaused(false); });
@@ -2108,7 +2261,7 @@ P.x = AW / 2; P.y = AH / 2; me.alive = true;
   if (code) {
     state = 'mp'; showPanel('mp');
     $('code-in').value = code.toUpperCase().slice(0, 5);
-    mpStatus('Gib deinen Namen ein und tritt bei.', true);
+    mpStatus(t('mp.enterName'), true);
     mpAvailable();
   }
 }
@@ -2144,6 +2297,7 @@ function frame(now) {
   netWatch(now);
   if (!paused) updateFx(state === 'play' && mode === 'solo' && slowT > 0 ? dt * 0.3 : dt);
   updateGrid(Math.min(dt, 1 / 30));
+  musicTick(dt);
   render(now);
   if (state === 'play') updateHud();
   requestAnimationFrame(frame);

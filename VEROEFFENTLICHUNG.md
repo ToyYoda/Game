@@ -23,7 +23,8 @@ Die Builds findest du nach jedem Push auf `main` unter GitHub → Actions → �
 1. **Datenschutzerklärung ausfüllen:** In `privacy.html` die Platzhalter `[Vor- und Nachname]`, Anschrift und `[E-Mail-Adresse]` ersetzen (deutscher und englischer Teil). Beide Stores verlangen eine erreichbare Datenschutz-URL.
 2. **Impressum prüfen:** Wer in Deutschland Apps geschäftsmäßig anbietet (auch kostenlos mit Gewinnabsicht), braucht in der Regel ein Impressum. Im Zweifel rechtlich beraten lassen.
 3. **Arena-Server:** Der kostenlose Render-Tarif schläft ein und hat wenig Rechenleistung. Für eine Store-Veröffentlichung einen bezahlten Tarif mit einem vollen Kern wählen, sonst erleben neue Spieler beim ersten Start eine Minute Wartezeit.
-4. **Englische Spieloberfläche (empfohlen):** Die Spieloberfläche ist bisher nur deutsch. Für Steam ist Englisch fast Pflicht, um gefunden zu werden.
+4. **Musik:** `music/theme.mp3` ablegen (siehe `music/LIESMICH.md`). Für Steam und Google Play muss die Musik kommerziell genutzt werden dürfen; bei Suno gilt das nur für Stücke, die mit einem bezahlten Tarif erzeugt wurden.
+5. **Sprachen:** Das Spiel ist deutsch und englisch. In den Stores beide Sprachen für die Oberfläche angeben (kein Ton mit Sprache, keine Untertitel nötig).
 
 ## Steam
 

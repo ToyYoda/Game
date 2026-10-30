@@ -5,6 +5,7 @@ COPY server/package.json server/package-lock.json server/
 RUN cd server && npm ci --omit=dev
 COPY src/sim.js src/sim.js
 COPY index.html index.html
+COPY music music
 COPY server/server.js server/server.js
 ENV PORT=8787 MAX_PLAYERS=200
 EXPOSE 8787

@@ -39,6 +39,16 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ players: clients.size, alive: world.aliveList().length, max: MAX_PLAYERS, enemies: world.enemies.length }));
   }
   if (url === '/health') { res.writeHead(200); return res.end('ok'); }
+  // Musik für die vom Server ausgelieferte Spielseite
+  const mm = /^\/music\/([a-z0-9_-]+\.(mp3|ogg))$/.exec(url);
+  if (mm) {
+    const file = path.join(__dirname, '..', 'music', mm[1]);
+    return fs.stat(file, (err, st) => {
+      if (err) { res.writeHead(404); return res.end(); }
+      res.writeHead(200, { 'content-type': mm[2] === 'mp3' ? 'audio/mpeg' : 'audio/ogg', 'content-length': st.size, 'cache-control': 'public, max-age=86400' });
+      fs.createReadStream(file).pipe(res);
+    });
+  }
   if ((url === '/' || url === '/index.html') && page) {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
     return res.end(page);

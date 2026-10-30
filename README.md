@@ -39,7 +39,10 @@ Technik: Die Browser verbinden sich direkt per WebRTC (Bibliothek PeerJS, Vermit
 Das Spiel selbst simuliert der Browser des Hosts; sein Tab sollte deshalb im Vordergrund bleiben.
 In sehr restriktiven Netzen (manche Firmen- oder Mobilfunknetze) kann die direkte Verbindung scheitern.
 
-Tasten (optional): `Leertaste` neue Runde, `Esc`/`P` Pause, `M` Ton.
+Tasten (optional): `Leertaste` neue Runde, `Esc`/`P` Pause, `M` Ton (Musik und Effekte → nur Effekte → aus).
+
+Sprache: Deutsch oder Englisch, je nach Gerät; im Hauptmenü umschaltbar.
+Musik: `music/theme.mp3` (siehe `music/LIESMICH.md`); ohne Datei bleibt es still.
 Auf dem Handy: Finger steuert, Doppeltipp löst die Schockwelle aus.
 
 ## Arena-Server einrichten

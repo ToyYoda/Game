@@ -26,6 +26,7 @@ jobs:
         run: |
           mkdir _site
           cp index.html privacy.html .nojekyll _site/
+          if [ -d music ]; then cp -r music _site/; fi
       - uses: actions/configure-pages@v5
         with:
           enablement: true
