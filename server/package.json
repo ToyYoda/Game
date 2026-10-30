@@ -1,0 +1,16 @@
+{
+  "name": "lichtschlinge-arena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Arena-Server für Lichtschlinge (bis zu 200 Spieler)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "8.22.0"
+  }
+}

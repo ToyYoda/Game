@@ -1,16 +1,19 @@
-// Baut index.html (eigenständige Seite) aus src/lichtschlinge.html
+// Baut index.html (eigenständige Seite) aus src/lichtschlinge.html und src/sim.js
 import { readFileSync, writeFileSync } from 'node:fs';
-const src = readFileSync(new URL('./src/lichtschlinge.html', import.meta.url), 'utf8');
-const head = src.slice(0, src.indexOf('</style>') + 8);
-const bodyPart = src.slice(src.indexOf('</style>') + 8);
+const read = f => readFileSync(new URL(f, import.meta.url), 'utf8');
+let src = read('./src/lichtschlinge.html');
+const tag = '<script src="sim.js"></script>';
+if (!src.includes(tag)) throw new Error('sim.js-Einbindung fehlt');
+src = src.replace(tag, () => '<script>\n' + read('./src/sim.js') + '</script>');
+const cut = src.indexOf('</style>') + 8;
 const html = `<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-${head}
+${src.slice(0, cut)}
 </head>
-<body>${bodyPart}</body>
+<body>${src.slice(cut)}</body>
 </html>
 `;
 writeFileSync(new URL('./index.html', import.meta.url), html);

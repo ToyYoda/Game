@@ -18,6 +18,15 @@ Ein kleines Action-Browserspiel für die Maus. Keine Installation: `index.html` 
 | Rote Klingen | zerschneiden deinen Schweif |
 | Violette Sechsecke | explodieren beim Einfangen und reißen alles im Umkreis mit |
 
+## Arena (online, bis zu 200 Lichter)
+
+- **Arena** → Namen eingeben → **Arena betreten**. Eine große Welt (7000 × 7000), die Kamera folgt deinem Licht.
+- Neue Lichter landen in der Nähe anderer Spieler. Jedes Licht hat seinen eigenen Schwierigkeitsgrad, der mit seiner Lebenszeit steigt.
+- Oben rechts steht die Live-Rangliste, unten links die Übersichtskarte. Wer verglüht, sieht Platz und Bestenliste und steigt mit **Nochmal** sofort wieder ein.
+- Fremde Lichter in der eigenen Schlinge verlieren ihre Kette (wie im Modus mit Freunden).
+
+Die Arena braucht den Server aus `server/` (siehe unten). Ohne eingetragene Server-Adresse zeigt das Spiel „Der Arena-Server ist noch nicht eingerichtet“.
+
 ## Mit Freunden (online, bis zu 4 Lichter)
 
 - **Mit Freunden** → Namen eingeben → **Raum erstellen**. Den Link (oder den fünfstelligen Code) an die anderen schicken.
@@ -33,7 +42,29 @@ In sehr restriktiven Netzen (manche Firmen- oder Mobilfunknetze) kann die direkt
 Tasten (optional): `Leertaste` neue Runde, `Esc`/`P` Pause, `M` Ton.
 Auf dem Handy: Finger steuert, Doppeltipp löst die Schockwelle aus.
 
+## Arena-Server einrichten
+
+Der Server (`server/server.js`, Node.js + WebSocket) simuliert die Welt mit 30 Takten pro Sekunde und schickt jedem Licht 15-mal pro Sekunde nur den Ausschnitt um sich herum. Er liefert unter seiner eigenen Adresse auch das Spiel aus.
+
+**Render (am einfachsten):** render.com → *New* → *Blueprint* → dieses Repository wählen. `render.yaml` richtet alles ein. Danach ist das Spiel unter `https://<name>.onrender.com` spielbar.
+Damit auch die GitHub-Pages-Seite die Arena findet, in `src/lichtschlinge.html` die Konstante `ARENA_URL` auf `wss://<name>.onrender.com` setzen und `node build.mjs` ausführen.
+
+**Andere Hoster:** Das `Dockerfile` baut einen Container (Port über `PORT`, Standard 8787).
+
+Einstellungen über Umgebungsvariablen: `MAX_PLAYERS` (200), `WORLD_SIZE` (7000), `LOG_SECONDS` (60).
+
+Gemessen mit 200 simulierten Spielern auf einem Kern: ca. 6 ms Rechenzeit pro Takt (Budget 33 ms), rund 1,8 MB/s ausgehend (komprimiert, ca. 9 KB/s pro Spieler).
+Der kostenlose Render-Tarif hat nur einen Bruchteil eines Kerns, schläft nach 15 Minuten ohne Besucher ein (Aufwachen bis zu einer Minute) und begrenzt den Datenverkehr. Für viele gleichzeitige Spieler braucht es einen bezahlten Tarif.
+
+Lokal testen:
+
+```bash
+cd server && npm install && cd .. && node build.mjs && node server/server.js
+```
+
+Dann `http://localhost:8787` öffnen.
+
 ## Entwicklung
 
-Quelle ist `src/lichtschlinge.html`. `node build.mjs` erzeugt daraus die eigenständige `index.html`.
+Quellen sind `src/lichtschlinge.html` (Seite) und `src/sim.js` (Spiellogik, gemeinsam für Browser und Arena-Server). `node build.mjs` erzeugt daraus die eigenständige `index.html`.
 Für GitHub Pages reicht es, Pages auf den Branch mit `index.html` im Wurzelverzeichnis zu stellen.

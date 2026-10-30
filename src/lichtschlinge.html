@@ -47,6 +47,7 @@ body.playing #hud, body.paused #hud, body.spectating #hud { opacity: 1; }
 #board div { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
 #board b { font-family: var(--f-display); font-weight: 500; font-size: 13px; min-width: 4ch; text-align: right; }
 #board .out { opacity: .4; }
+#board .me { color: var(--lumen); }
 
 .overlay {
   position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -156,9 +157,23 @@ body.playing #mute { opacity: .35; }
     </dl>
     <div class="row">
       <button class="go" id="start" type="button">Allein spielen</button>
+      <button class="alt" id="to-arena" type="button">Arena</button>
       <button class="alt" id="to-mp" type="button">Mit Freunden</button>
     </div>
     <p class="small">Rekord allein: <span id="menu-best">0</span></p>
+  </div>
+</div>
+
+<div id="arena" class="overlay off">
+  <div class="panel narrow">
+    <h2 class="cool">Arena</h2>
+    <p class="lead">Eine riesige Welt für bis zu 200 Lichter. Fang Gegner, zerreiß fremde Ketten und kletter in der Rangliste nach oben. Wer verglüht, steigt sofort wieder ein.</p>
+    <label class="field-wrap"><span class="hud-label">Dein Name</span>
+      <input class="field" id="arena-name" maxlength="14" autocomplete="nickname" placeholder="Name"></label>
+    <button class="go" id="arena-join" type="button">Arena betreten</button>
+    <p class="small" id="arena-online"></p>
+    <p class="status" id="arena-status" role="status"></p>
+    <button class="link" id="arena-back" type="button">Zurück</button>
   </div>
 </div>
 
@@ -209,6 +224,7 @@ body.playing #mute { opacity: .35; }
       <div><span class="hud-label">Größter Fang</span><b id="st-catch">0</b></div>
       <div><span class="hud-label">Rekord</span><b id="st-best">0</b></div>
     </div>
+    <div class="hud-label" id="rank-title" hidden>Bestenliste der Arena</div>
     <ul class="plist" id="ranking" hidden></ul>
     <button class="go" id="again" type="button">Nochmal</button>
     <p class="small" id="over-hint">oder Leertaste</p>
@@ -225,6 +241,7 @@ body.playing #mute { opacity: .35; }
 
 <button id="mute" type="button" aria-label="Ton an oder aus">TON</button>
 
+<script src="sim.js"></script>
 <script>
 (() => {
 'use strict';
@@ -316,342 +333,30 @@ function toggleMute() {
   initAudio(); if (master) master.gain.value = muted ? 0 : 0.45;
 }
 
-// ---------- Spieltypen & Konstanten ----------
-const TYPES = {
-  seeker:  { r: 11, hue: 330, value: 10 },
-  drifter: { r: 12, hue: 185, value: 6 },
-  dasher:  { r: 12, hue: 48,  value: 20 },
-  cutter:  { r: 13, hue: 8,   value: 25 },
-  bomb:    { r: 19, hue: 275, value: 30 }
-};
-const TYPE_KEYS = Object.keys(TYPES);
-const PHASES = ['roam', 'aim', 'dash'];
-const PLAYER_HUES = [190, 105, 36, 255];
-const COMBO_T = 3.6;
-const TRAIL_LIFE = 2.6;
-const BOMB_R = 190;
-const PULSE_R = 250;
+// ---------- Spiellogik aus sim.js ----------
+const { TYPES, TYPE_KEYS, PHASES, PLAYER_HUES, COMBO_T, TRAIL_LIFE, BOMB_R, PULSE_R, trailMax, segInter, segDist, polyArea, flat, unflat, World } = window.LS;
 const ARENA_MP = { w: 1600, h: 900 };
-const trailMax = m => 1250 + Math.min(m - 1, 20) * 50;
-
-// ---------- Geometrie ----------
-function segInter(ax, ay, bx, by, cx, cy, dx, dy) {
-  const rx = bx - ax, ry = by - ay, sx = dx - cx, sy = dy - cy;
-  const den = rx * sy - ry * sx;
-  if (Math.abs(den) < 1e-9) return null;
-  const qx = cx - ax, qy = cy - ay;
-  const t = (qx * sy - qy * sx) / den, u = (qx * ry - qy * rx) / den;
-  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) return { x: ax + t * rx, y: ay + t * ry };
-  return null;
-}
-function segDist(px, py, ax, ay, bx, by) {
-  const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
-  let t = l2 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
-  t = clamp(t, 0, 1);
-  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
-}
-function inPoly(x, y, poly) {
-  let inside = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const a = poly[i], b = poly[j];
-    if ((a.y > y) !== (b.y > y) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) inside = !inside;
-  }
-  return inside;
-}
-function polyArea(poly) {
-  let s = 0;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) s += (poly[j].x + poly[i].x) * (poly[j].y - poly[i].y);
-  return Math.abs(s / 2);
-}
-function centroid(poly) {
-  let x = 0, y = 0; for (const p of poly) { x += p.x; y += p.y; }
-  return { x: x / poly.length, y: y / poly.length };
-}
-const flat = pts => { const a = []; for (const p of pts) a.push(Math.round(p.x), Math.round(p.y)); return a; };
-const unflat = a => { const p = []; for (let i = 0; i + 1 < a.length; i += 2) p.push({ x: a[i], y: a[i + 1] }); return p; };
-
-// ---------- Welt: die eigentliche Simulation (läuft allein oder beim Host) ----------
-class World {
-  constructor(w, h, solo) {
-    this.w = w; this.h = h; this.solo = solo;
-    this.players = new Map(); this.enemies = []; this.gems = []; this.events = [];
-    this.gameT = 0; this.spawnT = 1; this.nid = 1; this.running = false; this.endT = 0; this.done = false;
-  }
-  addPlayer(id, name, hue) {
-    const p = { id, name, hue, x: this.w / 2, y: this.h / 2, alive: true, score: 0, mult: 1, multMax: 1, comboT: 0, energy: 1, tr: [], loops: 0, kills: 0, catch: 0, time: 0, steals: 0 };
-    this.players.set(id, p);
-    return p;
-  }
-  start() {
-    const arr = [...this.players.values()];
-    arr.forEach((p, i) => {
-      const a = i / arr.length * TAU, r = arr.length > 1 ? Math.min(this.w, this.h) * 0.2 : 0;
-      p.x = this.w / 2 + Math.cos(a) * r; p.y = this.h / 2 + Math.sin(a) * r;
-    });
-    this.running = true;
-  }
-  ev(o) { this.events.push(o); }
-  aliveList() { const a = []; for (const p of this.players.values()) if (p.alive) a.push(p); return a; }
-  nearest(x, y, list) {
-    let best = null, bd = Infinity;
-    for (const p of list) { const d = (p.x - x) ** 2 + (p.y - y) ** 2; if (d < bd) { bd = d; best = p; } }
-    return best;
-  }
-  spawnEnemy(type, x, y, warm = 0.9) {
-    const T = TYPES[type];
-    const e = { id: this.nid++, type, x, y, vx: 0, vy: 0, r: T.r, hue: T.hue, value: T.value, warm, rot: rand(0, TAU), a: rand(0, TAU), dead: false, stun: 0, phase: 'roam', pt: rand(1.2, 2.4), ax: 1, ay: 0 };
-    if (type === 'drifter') { const a = rand(0, TAU), s = rand(70, 130) + this.gameT * 0.6; e.vx = Math.cos(a) * s; e.vy = Math.sin(a) * s; }
-    this.enemies.push(e);
-    return e;
-  }
-  spawnPoint(minDist, alive) {
-    for (let tries = 0; tries < 40; tries++) {
-      const x = rand(40, this.w - 40), y = rand(60, this.h - 40);
-      if (alive.every(p => Math.hypot(x - p.x, y - p.y) > minDist)) return { x, y };
-    }
-    return { x: rand(40, this.w - 40), y: rand(60, this.h - 40) };
-  }
-  pickType() {
-    const t = this.gameT, pool = [['seeker', 5], ['drifter', 4]];
-    if (t > 12) pool.push(['bomb', 1.2]);
-    if (t > 22) pool.push(['dasher', 2 + Math.min(2, (t - 22) / 30)]);
-    if (t > 40) pool.push(['cutter', 1.5 + Math.min(1.5, (t - 40) / 40)]);
-    let sum = 0; for (const p of pool) sum += p[1];
-    let r = Math.random() * sum;
-    for (const p of pool) { r -= p[1]; if (r <= 0) return p[0]; }
-    return 'seeker';
-  }
-  spawnTick(dt, alive) {
-    this.spawnT -= dt;
-    const n = Math.max(1, alive.length);
-    const cap = Math.min(60 + 15 * (n - 1), (7 + this.gameT / 4) * (1 + 0.6 * (n - 1)));
-    if (this.spawnT > 0 || this.enemies.length >= cap) return;
-    this.spawnT = Math.max(0.33, 1.5 - this.gameT * 0.011) * rand(0.7, 1.3) / (1 + 0.45 * (n - 1));
-    const minDist = Math.min(this.w, this.h) * 0.3;
-    if (Math.random() < 0.22 + Math.min(0.15, this.gameT / 600)) {
-      // Schwarm: lohnt sich für große Schlingen
-      const c = this.spawnPoint(minDist, alive), cnt = 3 + Math.floor(Math.random() * (3 + this.gameT / 40));
-      const type = Math.random() < 0.55 ? 'drifter' : 'seeker';
-      const a = rand(0, TAU), s = rand(60, 100);
-      for (let i = 0; i < cnt; i++) {
-        const e = this.spawnEnemy(type, clamp(c.x + rand(-45, 45), 20, this.w - 20), clamp(c.y + rand(-45, 45), 20, this.h - 20), 1.0 + i * 0.05);
-        if (type === 'drifter') { e.vx = Math.cos(a) * s; e.vy = Math.sin(a) * s; }
-      }
-    } else {
-      const p = this.spawnPoint(minDist, alive);
-      this.spawnEnemy(this.pickType(), p.x, p.y);
-    }
-    this.ev({ k: 'sp' });
-  }
-  step(dt) {
-    if (!this.running) return;
-    this.gameT += dt;
-    const alive = this.aliveList();
-    if (alive.length) this.spawnTick(dt, alive);
-    this.updateEnemies(dt, alive);
-    this.updateGems(dt, alive);
-    for (const p of alive) {
-      if (p.mult > 1) {
-        p.comboT -= dt;
-        if (p.comboT <= 0) { p.mult--; p.comboT = 1.4; this.ev({ k: 'cl', id: p.id }); }
-      }
-    }
-    if (!alive.length) {
-      this.endT += dt;
-      if (this.endT > 1.6) { this.running = false; this.done = true; }
-    }
-  }
-  updateEnemies(dt, alive) {
-    const diff = Math.min(1, this.gameT / 150);
-    for (const e of this.enemies) {
-      if (e.dead) continue;
-      e.rot += dt * (e.type === 'cutter' ? 9 : 1.4);
-      if (e.warm > 0) { e.warm -= dt; continue; }
-      const tgt = this.nearest(e.x, e.y, alive);
-      const dx = tgt ? tgt.x - e.x : 0, dy = tgt ? tgt.y - e.y : 0, d = Math.hypot(dx, dy) || 1;
-      if (e.stun > 0) {
-        e.stun -= dt; e.vx *= Math.pow(0.12, dt); e.vy *= Math.pow(0.12, dt);
-      } else if (tgt) {
-        switch (e.type) {
-          case 'seeker': {
-            const sp = 115 + diff * 120, acc = 260 + diff * 200;
-            e.vx += dx / d * acc * dt; e.vy += dy / d * acc * dt;
-            const v = Math.hypot(e.vx, e.vy); if (v > sp) { e.vx *= sp / v; e.vy *= sp / v; }
-            break;
-          }
-          case 'drifter': {
-            const v = Math.hypot(e.vx, e.vy), want = 80 + diff * 70;
-            if (v < want) { e.vx *= 1 + dt; e.vy *= 1 + dt; }
-            break;
-          }
-          case 'bomb': {
-            e.vx += (dx / d * 45 - e.vx) * dt; e.vy += (dy / d * 45 - e.vy) * dt;
-            break;
-          }
-          case 'cutter': {
-            // Zielt auf die Mitte des nächsten Schweifs, sonst auf das Licht
-            let tx = tgt.x, ty = tgt.y;
-            const tr = tgt.tr;
-            if (tr.length > 16) { const i = Math.floor(tr.length * 0.2) * 2; tx = tr[i]; ty = tr[i + 1]; }
-            const cx = tx - e.x, cy = ty - e.y, cd = Math.hypot(cx, cy) || 1, sp = 140 + diff * 80;
-            e.vx += (cx / cd * sp - e.vx) * dt * 1.6; e.vy += (cy / cd * sp - e.vy) * dt * 1.6;
-            break;
-          }
-          case 'dasher': {
-            e.pt -= dt;
-            if (e.phase === 'roam') {
-              e.vx += (dx / d * 55 - e.vx) * dt * 2; e.vy += (dy / d * 55 - e.vy) * dt * 2;
-              if (e.pt <= 0 && d < 700) { e.phase = 'aim'; e.pt = 0.65; e.ax = dx / d; e.ay = dy / d; }
-            } else if (e.phase === 'aim') {
-              e.vx *= Math.pow(0.02, dt); e.vy *= Math.pow(0.02, dt);
-              if (e.pt > 0.2) { e.ax = dx / d; e.ay = dy / d; }
-              if (e.pt <= 0) { e.phase = 'dash'; e.pt = 0.38; const s = 640 + diff * 220; e.vx = e.ax * s; e.vy = e.ay * s; }
-            } else if (e.pt <= 0) { e.phase = 'roam'; e.pt = rand(1.4, 2.4); }
-            break;
-          }
-        }
-      } else { e.vx *= Math.pow(0.5, dt); e.vy *= Math.pow(0.5, dt); }
-      e.x += e.vx * dt; e.y += e.vy * dt;
-      if (e.x < e.r) { e.x = e.r; e.vx = Math.abs(e.vx); }
-      if (e.x > this.w - e.r) { e.x = this.w - e.r; e.vx = -Math.abs(e.vx); }
-      if (e.y < e.r) { e.y = e.r; e.vy = Math.abs(e.vy); }
-      if (e.y > this.h - e.r) { e.y = this.h - e.r; e.vy = -Math.abs(e.vy); }
-      e.a = e.type === 'dasher' && e.phase === 'aim' ? Math.atan2(e.ay, e.ax) : (Math.hypot(e.vx, e.vy) > 5 ? Math.atan2(e.vy, e.vx) : e.a);
-    }
-    // Leichte Abstoßung untereinander, damit Schwärme nicht verschmelzen
-    const es = this.enemies;
-    for (let i = 0; i < es.length; i++) {
-      const a = es[i]; if (a.warm > 0) continue;
-      for (let j = i + 1; j < es.length; j++) {
-        const b = es[j]; if (b.warm > 0) continue;
-        const dx = b.x - a.x, dy = b.y - a.y, min = a.r + b.r, d2 = dx * dx + dy * dy;
-        if (d2 < min * min && d2 > 0.01) {
-          const d = Math.sqrt(d2), push = (min - d) * 0.5;
-          a.x -= dx / d * push; a.y -= dy / d * push; b.x += dx / d * push; b.y += dy / d * push;
-        }
-      }
-    }
-    this.enemies = es.filter(e => !e.dead);
-  }
-  updateGems(dt, alive) {
-    for (const g of this.gems) {
-      g.life -= dt;
-      if (g.life <= 0) { g.dead = true; continue; }
-      const p = this.nearest(g.x, g.y, alive);
-      if (p) {
-        const dx = p.x - g.x, dy = p.y - g.y, d = Math.hypot(dx, dy) || 1;
-        if (d < 150) { const f = (1 - d / 150) * 2400; g.vx += dx / d * f * dt; g.vy += dy / d * f * dt; }
-        if (d < 18) {
-          g.dead = true; p.score += 5 * p.mult; p.energy = Math.min(1, p.energy + 0.015);
-          this.ev({ k: 'g', id: p.id, x: Math.round(g.x), y: Math.round(g.y) });
-          continue;
-        }
-      }
-      g.vx *= Math.pow(0.15, dt); g.vy *= Math.pow(0.15, dt);
-      g.x += g.vx * dt; g.y += g.vy * dt;
-    }
-    this.gems = this.gems.filter(g => !g.dead);
-  }
-  loopHue(p) { return this.solo ? Math.round((190 + this.gameT * 25 + 140) % 360) : p.hue; }
-  handle(id, m) {
-    const p = this.players.get(id);
-    if (!p || !this.running) return;
-    if (m.t === 'p') { if (p.alive) { p.x = m.x; p.y = m.y; p.tr = m.tr || []; } }
-    else if (m.t === 'loop' && p.alive) this.resolveLoop(p, unflat(m.poly || []));
-    else if (m.t === 'pulse' && p.alive) this.pulse(p);
-    else if (m.t === 'die' && p.alive) {
-      p.alive = false; p.time = this.gameT; p.tr = [];
-      if (typeof m.x === 'number') { p.x = m.x; p.y = m.y; }
-      this.ev({ k: 'd', id, x: Math.round(p.x), y: Math.round(p.y), h: p.hue });
-    }
-  }
-  resolveLoop(p, poly) {
-    if (poly.length < 3 || polyArea(poly) < 600) return;
-    const c = centroid(poly), caught = [];
-    for (const e of this.enemies) if (!e.dead && e.warm <= 0 && inPoly(e.x, e.y, poly)) { e.dead = true; caught.push(e); }
-    // Bomben reißen Nachbarn mit
-    for (let i = 0; i < caught.length; i++) {
-      const b = caught[i];
-      if (b.type !== 'bomb') continue;
-      this.ev({ k: 'b', x: Math.round(b.x), y: Math.round(b.y) });
-      for (const e of this.enemies) if (!e.dead && Math.hypot(e.x - b.x, e.y - b.y) < BOMB_R + e.r) { e.dead = true; caught.push(e); }
-    }
-    let gemCount = 0;
-    for (const g of this.gems) if (!g.dead && inPoly(g.x, g.y, poly)) { g.dead = true; gemCount++; }
-    // Andere Lichter in der Schlinge verlieren ihre Kette
-    for (const o of this.players.values()) {
-      if (o === p || !o.alive || !inPoly(o.x, o.y, poly)) continue;
-      const bonus = 25 * p.mult * Math.max(1, o.mult);
-      p.score += bonus; p.steals++;
-      o.mult = 1; o.comboT = 0;
-      this.ev({ k: 'pv', id: o.id, by: p.id, x: Math.round(o.x), y: Math.round(o.y), bonus });
-    }
-    const n = caught.length, m0 = p.mult;
-    p.loops++;
-    let gain = gemCount * 5 * p.mult, label = '';
-    if (n > 0) {
-      let base = 0; for (const e of caught) base += e.value;
-      gain += Math.round(base * p.mult * (1 + 0.5 * (n - 1)));
-      p.kills += n; p.catch = Math.max(p.catch, n);
-      label = n >= 8 ? 'SUPERNOVA' : n >= 6 ? 'GEWALTIG' : ['', '', 'DOPPELT', 'DREIFACH', 'VIERFACH', 'FÜNFFACH'][n];
-      p.mult += n >= 3 ? 2 : 1; p.multMax = Math.max(p.multMax, p.mult); p.comboT = COMBO_T;
-      p.energy = Math.min(1, p.energy + 0.1 + n * 0.08);
-      for (const e of caught) {
-        this.ev({ k: 'k', x: Math.round(e.x), y: Math.round(e.y), h: e.hue, b: e.type === 'bomb' ? 1 : 0, r: e.r });
-        const cnt = e.type === 'bomb' ? 4 : e.type === 'drifter' ? 1 : 2;
-        for (let i = 0; i < cnt; i++) {
-          const a = rand(0, TAU), s = rand(40, 140);
-          this.gems.push({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 7, dead: false });
-        }
-      }
-    }
-    p.score += gain;
-    this.ev({ k: 'l', id: p.id, poly: flat(poly), cx: Math.round(c.x), cy: Math.round(c.y), n, gain, label, m: m0, h: this.loopHue(p) });
-  }
-  pulse(p) {
-    if (p.energy < 1) return;
-    p.energy = 0;
-    for (const e of this.enemies) {
-      const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy) || 1;
-      if (d < PULSE_R + e.r) {
-        const f = 520 * (1 - d / (PULSE_R + e.r)) + 260;
-        e.vx = dx / d * f; e.vy = dy / d * f; e.stun = 0.9;
-        if (e.type === 'dasher') { e.phase = 'roam'; e.pt = rand(1.2, 2); }
-      }
-    }
-    this.ev({ k: 'pu', id: p.id, x: Math.round(p.x), y: Math.round(p.y) });
-  }
-  results() {
-    return [...this.players.values()]
-      .map(p => ({ id: p.id, name: p.name, hue: p.hue, score: p.score, multMax: p.multMax, kills: p.kills, loops: p.loops, catch: p.catch, steals: p.steals, time: p.alive ? this.gameT : p.time }))
-      .sort((a, b) => b.score - a.score);
-  }
-  snapshot() {
-    const e = [];
-    for (const x of this.enemies) e.push(x.id, TYPE_KEYS.indexOf(x.type), Math.round(x.x), Math.round(x.y), Math.round(x.a * 100), x.warm > 0 ? Math.round(x.warm * 100) : 0, x.stun > 0 ? 1 : 0, PHASES.indexOf(x.phase), Math.round(x.pt * 100));
-    const g = [];
-    for (const x of this.gems) g.push(Math.round(x.x), Math.round(x.y), Math.round(x.life * 10));
-    const p = [];
-    for (const x of this.players.values()) p.push([x.id, Math.round(x.x), Math.round(x.y), x.alive ? 1 : 0, x.score, x.mult, Math.round(x.energy * 100), x.mult > 1 ? Math.round(clamp(x.comboT / COMBO_T, 0, 1) * 100) : 0, x.tr]);
-    return { t: 's', gt: Math.round(this.gameT * 100) / 100, e, g, p };
-  }
-}
 
 // ---------- Arena, Ansicht, Sterne, Gitter ----------
-let AW = 0, AH = 0, fixedArena = false, vs = 1, vox = 0, voy = 0;
+let AW = 0, AH = 0, fixedArena = false, camMode = false, vs = 1, vox = 0, voy = 0;
 let stars = [];
 let grid = null;
 const GS = 46;
+const camScale = () => clamp(Math.min(W, H * 1.6) / 1500, 0.55, 1.1);
 function layoutView() {
+  if (camMode) { vs = camScale(); vox = W / 2 - P.x * vs; voy = H / 2 - P.y * vs; return; }
   if (!fixedArena) { AW = W; AH = H; vs = 1; vox = 0; voy = 0; return; }
   const top = 64, bottom = 10;
   vs = Math.min((W - 16) / AW, (H - top - bottom) / AH);
   vox = (W - AW * vs) / 2; voy = top + (H - top - bottom - AH * vs) / 2;
 }
-function setArena(fixed) {
-  fixedArena = fixed;
-  if (fixed) { AW = ARENA_MP.w; AH = ARENA_MP.h; }
-  layoutView(); buildGrid();
+// screen: ganzer Bildschirm (allein) · fixed: Raum mit Freunden · cam: große Arena, Kamera folgt dem Licht
+function setArena(kind, w, h) {
+  fixedArena = kind !== 'screen'; camMode = kind === 'cam';
+  if (kind === 'fixed') { AW = ARENA_MP.w; AH = ARENA_MP.h; }
+  if (kind === 'cam') { AW = w; AH = h; }
+  layoutView(); grid = null;
+  if (camMode) gridFollow(); else buildGrid();
 }
 function resize() {
   DPR = Math.min(2, window.devicePixelRatio || 1);
@@ -664,18 +369,40 @@ function resize() {
   const oldW = AW, oldH = AH;
   layoutView();
   if (!fixedArena && world && world.solo) { world.w = AW; world.h = AH; }
-  if (!grid || oldW !== AW || oldH !== AH) buildGrid();
+  if (camMode) gridFollow();
+  else if (!grid || oldW !== AW || oldH !== AH) buildGrid();
+}
+function makeGrid(cols, rows, ox, oy) {
+  const n = cols * rows;
+  const g = { cols, rows, ox, oy, hx: new Float32Array(n), hy: new Float32Array(n), x: new Float32Array(n), y: new Float32Array(n), vx: new Float32Array(n), vy: new Float32Array(n) };
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const i = r * cols + c;
+    g.hx[i] = g.x[i] = ox + c * GS;
+    g.hy[i] = g.y[i] = oy + r * GS;
+  }
+  return g;
 }
 function buildGrid() {
   const cols = Math.ceil(AW / GS) + 3, rows = Math.ceil(AH / GS) + 3;
-  const ox = (AW - (cols - 1) * GS) / 2, oy = (AH - (rows - 1) * GS) / 2;
-  const n = cols * rows;
-  grid = { cols, rows, hx: new Float32Array(n), hy: new Float32Array(n), x: new Float32Array(n), y: new Float32Array(n), vx: new Float32Array(n), vy: new Float32Array(n) };
+  grid = makeGrid(cols, rows, (AW - (cols - 1) * GS) / 2, (AH - (rows - 1) * GS) / 2);
+}
+// Kamera-Modus: das Gitter deckt nur den sichtbaren Ausschnitt ab und rückt zellenweise nach
+function gridFollow() {
+  const vw = W / vs, vh = H / vs;
+  const cols = Math.ceil(vw / GS) + 4, rows = Math.ceil(vh / GS) + 4;
+  const ox = Math.floor((P.x - vw / 2) / GS) * GS - GS, oy = Math.floor((P.y - vh / 2) / GS) * GS - GS;
+  if (!grid || grid.cols !== cols || grid.rows !== rows || grid.ox === undefined) { grid = makeGrid(cols, rows, ox, oy); return; }
+  if (ox === grid.ox && oy === grid.oy) return;
+  const old = grid, g = makeGrid(cols, rows, ox, oy);
+  const dc = Math.round((ox - old.ox) / GS), dr = Math.round((oy - old.oy) / GS);
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-    const i = r * cols + c;
-    grid.hx[i] = grid.x[i] = ox + c * GS;
-    grid.hy[i] = grid.y[i] = oy + r * GS;
+    const oc = c + dc, orr = r + dr;
+    if (oc < 0 || orr < 0 || oc >= cols || orr >= rows) continue;
+    const i = r * cols + c, j = orr * cols + oc;
+    g.x[i] = g.hx[i] + (old.x[j] - old.hx[j]); g.y[i] = g.hy[i] + (old.y[j] - old.hy[j]);
+    g.vx[i] = old.vx[j]; g.vy[i] = old.vy[j];
   }
+  grid = g;
 }
 function gridImpulse(x, y, radius, strength) {
   const g = grid, r2 = radius * radius;
@@ -705,8 +432,8 @@ function updateGrid(dt) {
 }
 
 // ---------- Zustand auf dieser Seite ----------
-let state = 'menu';       // menu | mp | lobby | play | over
-let mode = 'solo';        // solo | host | client
+let state = 'menu';       // menu | arena | mp | lobby | play | over
+let mode = 'solo';        // solo | host | client | arena
 let paused = false;
 let world = null;         // nur allein oder beim Host
 const mouse = { sx: 0, sy: 0, x: 0, y: 0, seen: false };
@@ -750,8 +477,16 @@ function implode(poly, c, h) {
     addPart(p.x, p.y, (c.x - p.x) * 2.2, (c.y - p.y) * 2.2, 0.45, h, 2);
   }
 }
-const nameOf = id => (roster.find(r => r.id === id) || {}).name || 'Licht';
-const hueOf = id => (roster.find(r => r.id === id) || {}).hue ?? 190;
+function nameOf(id) {
+  const v = view.players.get(id);
+  if (v && v.name) return v.name;
+  return (roster.find(r => r.id === id) || {}).name || 'Licht';
+}
+function hueOf(id) {
+  const v = view.players.get(id);
+  if (v && v.hue !== undefined) return v.hue;
+  return (roster.find(r => r.id === id) || {}).hue ?? 190;
+}
 
 // Ereignisse der Welt sichtbar und hörbar machen (gleich für Host und Client)
 function fx(ev) {
@@ -892,13 +627,18 @@ function updateLocal(dt, now) {
     }
     if (Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r - 2) { dieLocal(e.hue); return; }
   }
-  if (world || now - lastSend > 33) {
+  if (world || now - lastSend > (mode === 'arena' ? 50 : 33)) {
     lastSend = now;
     send({ t: 'p', x: Math.round(P.x * 10) / 10, y: Math.round(P.y * 10) / 10, tr: trailSample() });
   }
 }
 
 function dieLocal(h) {
+  deathFx(h);
+  send({ t: 'die', x: Math.round(P.x), y: Math.round(P.y) });
+  if (mode === 'host' || mode === 'client') { body.classList.remove('playing'); body.classList.add('spectating'); }
+}
+function deathFx(h) {
   me.alive = false;
   burst(P.x, P.y, 190, 60, 60, 600);
   for (let i = 0; i < 30; i++) { const a = rand(0, TAU), s = rand(60, 600); addPart(P.x, P.y, Math.cos(a) * s, Math.sin(a) * s, rand(0.6, 1.6), h, rand(1.5, 3.5)); }
@@ -907,8 +647,6 @@ function dieLocal(h) {
   shake = 22; if (mode === 'solo') slowT = 0.9;
   trail = [];
   sfx.die();
-  send({ t: 'die', x: Math.round(P.x), y: Math.round(P.y) });
-  if (mode !== 'solo') { body.classList.remove('playing'); body.classList.add('spectating'); }
 }
 
 function pulse() {
@@ -927,6 +665,7 @@ const conns = new Map();   // Host: peerId -> { conn, id }
 let outEvents = [], lastSnap = 0, lastRecv = 0;
 
 function send(m) {
+  if (mode === 'arena') { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); return; }
   if (mode === 'client') { if (hostConn && hostConn.open) hostConn.send(m); return; }
   if (world) world.handle(me.id, m);
 }
@@ -958,9 +697,10 @@ function mpAvailable() {
   if (!window.RTCPeerConnection) { mpStatus('Mehrspieler braucht direkte Browser-Verbindungen (WebRTC). Hier sind sie gesperrt – öffne das Spiel auf toyyoda.github.io/Game.'); return false; }
   return true;
 }
-function playerName() {
-  const n = $('name-in').value.trim().slice(0, 14) || 'Licht';
+function playerName(inputId) {
+  const n = $(inputId || 'name-in').value.trim().slice(0, 14) || 'Licht';
   store.set('name', n);
+  $('name-in').value = $('arena-name').value = n;
   return n;
 }
 function disconnect() {
@@ -972,7 +712,7 @@ function disconnect() {
   for (const c of cs) { try { c.conn.close(); } catch (e) {} }
   if (pr) { try { pr.destroy(); } catch (e) {} }
   view.em.clear(); view.players.clear(); view.gems = [];
-  setArena(false);
+  setArena('screen');
 }
 
 async function hostRoom() {
@@ -1125,10 +865,11 @@ function applySnap(s) {
   view.gems = g;
   const seenP = new Set();
   for (const r of s.p) {
-    const [id, x, y, alive, score, mult, energy, combo, tr] = r;
+    const [id, x, y, alive, score, mult, energy, combo, tr, h, name] = r;
     let p = view.players.get(id);
     if (!p) { p = { id, x, y }; view.players.set(id, p); }
     p.tx = x; p.ty = y; p.alive = !!alive; p.score = score; p.mult = mult; p.energy = energy / 100; p.combo = combo / 100; p.tr = tr || [];
+    if (h !== undefined) { p.hue = h; p.name = name; }
     seenP.add(id);
   }
   for (const id of view.players.keys()) if (!seenP.has(id)) view.players.delete(id);
@@ -1136,7 +877,7 @@ function applySnap(s) {
   hudDirty = true;
 }
 function smoothView(dt) {
-  const k = 1 - Math.exp(-dt * 18);
+  const k = 1 - Math.exp(-dt * (mode === 'arena' ? 12 : 18));
   for (const e of view.em.values()) {
     if (Math.hypot(e.tx - e.x, e.ty - e.y) > 160) { e.x = e.tx; e.y = e.ty; }
     else { e.x += (e.tx - e.x) * k; e.y += (e.ty - e.y) * k; }
@@ -1145,10 +886,93 @@ function smoothView(dt) {
   for (const p of view.players.values()) { p.x += (p.tx - p.x) * k; p.y += (p.ty - p.y) * k; }
 }
 
+// ---------- Arena (eigener Server über WebSocket) ----------
+// Adresse des Arena-Servers nach dem Einrichten hier eintragen, z. B. 'wss://lichtschlinge-arena.onrender.com'.
+// Ohne Eintrag: ?server=wss://… in der Adresse, oder die Seite wird direkt vom Arena-Server ausgeliefert.
+const ARENA_URL = '';
+let ws = null, lb = null, hall = [], closeReason = '';
+let arenaBest = store.get('bestArena', 0);
+function arenaUrl() {
+  const q = new URLSearchParams(location.search).get('server');
+  return q || window.LS_SERVER_URL || ARENA_URL;
+}
+function arenaStatus(msg, ok) { const el = $('arena-status'); el.textContent = msg || ''; el.classList.toggle('ok', !!ok); }
+function viewSize() { const s = camScale(); return { vw: Math.round(W / s), vh: Math.round(H / s) }; }
+function refreshOnline() {
+  const url = arenaUrl(), el = $('arena-online');
+  if (!url) { el.textContent = ''; arenaStatus('Der Arena-Server ist noch nicht eingerichtet.'); $('arena-join').disabled = true; return; }
+  $('arena-join').disabled = false;
+  el.textContent = 'Frage den Server …';
+  fetch(url.replace(/^ws/, 'http').replace(/\/$/, '') + '/status').then(r => r.json()).then(st => {
+    el.textContent = st.players + ' von ' + st.max + ' Lichtern in der Arena';
+  }).catch(() => { el.textContent = 'Der Server antwortet noch nicht. Nach längerer Pause braucht er bis zu einer Minute zum Aufwachen.'; });
+}
+function joinArena() {
+  const url = arenaUrl();
+  if (!url) { arenaStatus('Der Arena-Server ist noch nicht eingerichtet.'); return; }
+  initAudio();
+  const name = playerName('arena-name');
+  $('arena-join').disabled = true; closeReason = '';
+  arenaStatus('Verbinde mit der Arena …', true);
+  let sock;
+  try { sock = new WebSocket(url); } catch (e) { arenaStatus('Die Adresse des Arena-Servers ist ungültig.'); $('arena-join').disabled = false; return; }
+  ws = sock;
+  let opened = false;
+  sock.onopen = () => { opened = true; const v = viewSize(); sock.send(JSON.stringify({ t: 'hello', v: 1, name, vw: v.vw, vh: v.vh })); };
+  sock.onmessage = e => { if (sock !== ws) return; let m; try { m = JSON.parse(e.data); } catch (x) { return; } arenaRecv(m); };
+  sock.onclose = () => {
+    if (sock !== ws) return;
+    const wasIn = mode === 'arena';
+    leaveArena();
+    if (wasIn) { goMenu(); state = 'arena'; showPanel('arena'); }
+    $('arena-join').disabled = false;
+    arenaStatus(closeReason === 'full' ? 'Die Arena ist gerade voll. Versuch es gleich noch einmal.'
+      : wasIn ? 'Die Verbindung zur Arena ist abgerissen.'
+      : opened ? 'Der Server hat die Verbindung beendet.'
+      : 'Keine Verbindung zum Arena-Server. Nach längerer Pause wacht er erst auf – in einer Minute erneut versuchen.');
+  };
+}
+function arenaRecv(m) {
+  switch (m.t) {
+    case 'welcome':
+      mode = 'arena'; me.id = m.id; me.hue = m.hue; roster = []; lb = null;
+      view.em.clear(); view.players.clear(); view.gems = [];
+      P.x = m.x; P.y = m.y;
+      setArena('cam', m.w, m.h);
+      arenaStatus(''); $('arena-join').disabled = false;
+      beginPlay();
+      break;
+    case 's': if (state === 'play' || state === 'over') applySnap(m); break;
+    case 'lb': lb = m; break;
+    case 'dead': arenaDead(m); break;
+    case 'spawned':
+      P.x = m.x; P.y = m.y; view.em.clear(); view.gems = [];
+      layoutView(); gridFollow();
+      beginPlay();
+      break;
+    case 'full': closeReason = 'full'; break;
+  }
+}
+function arenaDead(m) {
+  if (me.alive) deathFx(330);
+  const isRecord = m.res.score > arenaBest && m.res.score > 0;
+  if (isRecord) { arenaBest = m.res.score; store.set('bestArena', arenaBest); }
+  hall = m.hall || [];
+  setTimeout(() => { if (mode === 'arena' && !me.alive && state === 'play') showOver(m.res, { rank: m.rank, n: m.n, record: isRecord }); }, 1300);
+}
+function arenaRespawn() { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: 'spawn' })); }
+function leaveArena() {
+  const sock = ws; ws = null;
+  if (mode === 'arena') mode = 'solo';
+  lb = null; view.em.clear(); view.players.clear(); view.gems = [];
+  try { if (sock) sock.close(); } catch (e) {}
+  setArena('screen');
+}
+
 // Host: Welt-Ereignisse lokal zeigen und mit dem Zustand verschicken
 function hostTick(now) {
   if (!world) return;
-  const evs = world.events; world.events = [];
+  const evs = world.events; world.events = []; world.deaths.length = 0;
   for (const ev of evs) fx(ev);
   if (mode !== 'host') return;
   outEvents.push(...evs);
@@ -1172,6 +996,7 @@ function updateHud() {
   elFill.style.width = combo * 100 + '%';
   elMult.style.transform = 'scale(' + (1 + multBump * 0.4) + ')';
   if (mode === 'solo') { elBest.textContent = fmt(Math.max(best, score)); return; }
+  if (mode === 'arena') { updateArenaBoard(score); return; }
   // Mehrspieler: Rangliste statt Rekord
   const list = world ? [...world.players.values()] : [...view.players.values()];
   list.sort((a, b) => b.score - a.score);
@@ -1187,6 +1012,26 @@ function updateHud() {
     const b = document.createElement('b'); b.textContent = fmt(p.score);
     d.append(n, dot, b); elBoard.append(d);
   }
+}
+
+function boardRow(name, h, score, cls) {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  const dot = document.createElement('span'); dot.className = 'dot'; dot.style.setProperty('--c', 'hsl(' + h + ',100%,62%)');
+  const n = document.createElement('span'); n.textContent = name;
+  const b = document.createElement('b'); b.textContent = fmt(score);
+  d.append(n, dot, b);
+  return d;
+}
+function updateArenaBoard(score) {
+  if (!lb) return;
+  const key = lb.top.slice(0, 5).map(t => t[0] + ':' + t[3]).join('|') + '#' + lb.rank + '#' + lb.alive + '#' + score;
+  if (key === boardKey) return;
+  boardKey = key;
+  $('best-label').textContent = 'Arena · ' + lb.alive + (lb.alive === 1 ? ' Licht' : ' Lichter');
+  elBoard.innerHTML = '';
+  lb.top.slice(0, 5).forEach((t, i) => elBoard.append(boardRow((i + 1) + '. ' + t[1] + (t[0] === me.id ? ' (du)' : ''), t[2], t[3], t[0] === me.id ? 'me' : '')));
+  if (lb.rank > 5) elBoard.append(boardRow(lb.rank + '. Du', me.hue, score, 'me'));
 }
 
 // ---------- Update ----------
@@ -1215,11 +1060,12 @@ function drawBackground(now) {
   g.addColorStop(0.6, 'rgba(14, 8, 34, 0.3)');
   g.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  const px = (P.x - AW / 2) * 0.02, py = (P.y - AH / 2) * 0.02;
+  const px = camMode ? P.x * 0.06 : (P.x - AW / 2) * 0.02, py = camMode ? P.y * 0.06 : (P.y - AH / 2) * 0.02;
   for (const s of stars) {
     const a = 0.25 + 0.35 * Math.sin(now * 0.0015 + s.p) * s.z;
     ctx.fillStyle = 'rgba(200, 190, 255,' + Math.max(0.05, a) + ')';
-    ctx.fillRect(s.x - px * s.z, s.y - py * s.z, s.z * 1.6, s.z * 1.6);
+    const x = ((s.x - px * s.z) % W + W) % W, y = ((s.y - py * s.z) % H + H) % H;
+    ctx.fillRect(x, y, s.z * 1.6, s.z * 1.6);
   }
 }
 
@@ -1235,6 +1081,11 @@ function drawGrid() {
   for (let i = 0; i < g.x.length; i++) {
     const d = Math.abs(g.x[i] - g.hx[i]) + Math.abs(g.y[i] - g.hy[i]);
     if (d > 3) { const s = Math.min(3, d / 6); ctx.fillRect(g.x[i] - s / 2, g.y[i] - s / 2, s, s); }
+  }
+  if (camMode) {
+    // Außerhalb der Arena abdunkeln
+    ctx.fillStyle = 'rgba(6, 4, 15, 0.6)';
+    ctx.beginPath(); ctx.rect(P.x - W / vs, P.y - H / vs, 2 * W / vs, 2 * H / vs); ctx.rect(0, 0, AW, AH); ctx.fill('evenodd');
   }
   if (fixedArena) {
     ctx.strokeStyle = 'rgba(79, 240, 255, 0.35)'; ctx.lineWidth = 2 / vs;
@@ -1452,7 +1303,26 @@ function drawHint() {
   ctx.font = '600 16px "Chakra Petch", sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(236,232,255,' + clamp(a, 0, 1) * 0.85 + ')';
-  ctx.fillText(msg, W / 2, H - 46);
+  // In der Arena liegt unten links die Karte: auf schmalen Bildschirmen den Hinweis darüber setzen
+  ctx.fillText(msg, W / 2, mode === 'arena' && W < 700 ? H - Math.min(130, W * 0.28) - 40 : H - 46);
+}
+
+// Arena: Übersichtskarte mit den besten Lichtern
+function drawMinimap() {
+  if (mode !== 'arena' || (state !== 'play' && state !== 'over')) return;
+  const size = Math.min(130, W * 0.28), s = size / Math.max(AW, AH), mw = AW * s, mh = AH * s;
+  const x0 = 14, y0 = H - mh - 14;
+  ctx.fillStyle = 'rgba(16, 10, 36, 0.65)'; ctx.fillRect(x0, y0, mw, mh);
+  ctx.strokeStyle = 'rgba(79, 240, 255, 0.35)'; ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, y0 + 0.5, mw - 1, mh - 1);
+  ctx.strokeStyle = 'rgba(236, 232, 255, 0.3)';
+  ctx.strokeRect(x0 + (P.x - W / vs / 2) * s, y0 + (P.y - H / vs / 2) * s, W / vs * s, H / vs * s);
+  if (lb) for (const t of lb.top) {
+    if (t[0] === me.id) continue;
+    ctx.fillStyle = hsl(t[2], 100, 65, 0.9);
+    ctx.fillRect(x0 + t[4] * s - 1.5, y0 + t[5] * s - 1.5, 3, 3);
+  }
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(x0 + P.x * s, y0 + P.y * s, 2.5, 0, TAU); ctx.fill();
 }
 
 function menuDemo(now, dt) {
@@ -1485,6 +1355,7 @@ function render(now) {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   drawCursor();
   drawHint();
+  drawMinimap();
 
   // Bloom: verkleinerte, weichgezeichnete Kopie additiv drüberlegen
   bctx.globalCompositeOperation = 'copy';
@@ -1501,7 +1372,7 @@ function render(now) {
 
 // ---------- Ablauf & Oberfläche ----------
 const body = document.body;
-const PANELS = ['menu', 'mp', 'lobby', 'over', 'pause'];
+const PANELS = ['menu', 'arena', 'mp', 'lobby', 'over', 'pause'];
 function showPanel(id) { for (const p of PANELS) $(p).classList.toggle('off', p !== id); }
 
 function goMenu() {
@@ -1516,9 +1387,9 @@ function startSolo(e) {
   initAudio();
   mode = 'solo'; me.id = 1; me.hue = 190;
   roster = [{ id: 1, name: 'Du', hue: 190 }];
-  setArena(false);
+  setArena('screen');
   if (e && e.clientX) setMouse(e, true);
-  world = new World(AW, AH, true);
+  world = new World({ w: AW, h: AH, solo: true });
   world.addPlayer(1, 'Du', 190);
   world.start();
   beginPlay();
@@ -1528,22 +1399,23 @@ function beginPlay() {
   state = 'play'; paused = false;
   me.alive = true; trail = [];
   const rec = myRec();
-  if (mouse.seen) { P.x = clamp(mouse.x, P.r, AW - P.r); P.y = clamp(mouse.y, P.r, AH - P.r); }
+  if (mode === 'arena') { /* Position kommt vom Server */ }
+  else if (mouse.seen) { P.x = clamp(mouse.x, P.r, AW - P.r); P.y = clamp(mouse.y, P.r, AH - P.r); }
   else if (rec) { P.x = rec.x; P.y = rec.y; mouse.x = P.x; mouse.y = P.y; mouse.sx = vox + P.x * vs; mouse.sy = voy + P.y * vs; }
   parts = []; texts = []; flashes = []; rings = [];
   shownScore = shownMult = -1; boardKey = '';
-  $('best-label').textContent = mode === 'solo' ? 'Rekord' : 'Lichter';
+  $('best-label').textContent = mode === 'solo' ? 'Rekord' : mode === 'arena' ? 'Arena' : 'Lichter';
   $('best').hidden = mode !== 'solo'; elBoard.hidden = mode === 'solo';
   showPanel(null);
   body.classList.add('playing'); body.classList.remove('paused', 'spectating');
-  for (const id of ['start', 'again', 'mp-start']) $(id).blur();
+  for (const id of ['start', 'again', 'mp-start', 'arena-join']) $(id).blur();
 }
 
 // Mehrspieler-Runde: Host baut die Welt, Clients warten auf Zustände
 function hostStartRound() {
   if (mode !== 'host') return;
-  setArena(true);
-  world = new World(AW, AH, false);
+  setArena('fixed');
+  world = new World({ w: AW, h: AH });
   for (const r of roster) world.addPlayer(r.id, r.name, r.hue);
   world.start();
   outEvents = [];
@@ -1552,18 +1424,31 @@ function hostStartRound() {
   startRound();
 }
 function startRound() {
-  if (mode === 'client') { setArena(true); view.em.clear(); view.gems = []; view.players.clear(); view.gt = 0; }
+  if (mode === 'client') { setArena('fixed'); view.em.clear(); view.gems = []; view.players.clear(); view.gt = 0; }
   if (mouse.seen) { mouse.x = (mouse.sx - vox) / vs; mouse.y = (mouse.sy - voy) / vs; }
   beginPlay();
 }
 
-function showOver(res) {
+function rankRow(r, i, isMe) {
+  const li = document.createElement('li'); if (isMe) li.className = 'me';
+  const pl = document.createElement('span'); pl.className = 'pl'; pl.textContent = i + 1;
+  const dot = document.createElement('span'); dot.className = 'dot'; dot.style.setProperty('--c', 'hsl(' + r.hue + ',100%,62%)');
+  const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = r.name;
+  const sub = document.createElement('span'); sub.className = 'sub';
+  sub.textContent = '×' + r.multMax + ' · ' + r.kills + ' erwischt' + (r.steals ? ' · ' + r.steals + (r.steals === 1 ? ' Kette' : ' Ketten') + ' zerrissen' : '');
+  const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = fmt(r.score);
+  li.append(pl, dot, nm, sub, sc);
+  return li;
+}
+function showOver(res, extra) {
   state = 'over';
   body.classList.remove('playing', 'spectating');
-  if (mode === 'solo') {
-    const r = res[0];
-    const isRecord = r.score > best;
-    if (isRecord) { best = r.score; store.set('best', best); }
+  const arena = mode === 'arena';
+  if (mode === 'solo' || arena) {
+    const r = arena ? res : res[0];
+    let isRecord;
+    if (arena) isRecord = extra.record;
+    else { isRecord = r.score > best; if (isRecord) { best = r.score; store.set('best', best); } }
     $('over-title').textContent = 'Verglüht';
     $('final').textContent = fmt(r.score);
     $('record').hidden = !(isRecord && r.score > 0);
@@ -1572,36 +1457,31 @@ function showOver(res) {
     $('st-mult').textContent = '×' + r.multMax;
     $('st-kills').textContent = r.kills;
     $('st-catch').textContent = r.catch;
-    $('st-best').textContent = fmt(best);
+    $('st-best').textContent = fmt(arena ? arenaBest : best);
     $('menu-best').textContent = fmt(best);
+    const ul = $('ranking'); ul.innerHTML = '';
+    if (arena) hall.forEach((h, i) => ul.append(rankRow(h, i, false)));
   } else {
     const win = res[0];
     $('over-title').textContent = win && win.id === me.id ? 'Gewonnen!' : (win ? nameOf(win.id) + ' gewinnt' : 'Runde vorbei');
     const ul = $('ranking'); ul.innerHTML = '';
-    res.forEach((r, i) => {
-      const li = document.createElement('li'); if (r.id === me.id) li.className = 'me';
-      const pl = document.createElement('span'); pl.className = 'pl'; pl.textContent = i + 1;
-      const dot = document.createElement('span'); dot.className = 'dot'; dot.style.setProperty('--c', 'hsl(' + r.hue + ',100%,62%)');
-      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = r.name;
-      const sub = document.createElement('span'); sub.className = 'sub';
-      sub.textContent = '×' + r.multMax + ' · ' + r.kills + ' erwischt' + (r.steals ? ' · ' + r.steals + (r.steals === 1 ? ' Kette' : ' Ketten') + ' zerrissen' : '');
-      const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = fmt(r.score);
-      li.append(pl, dot, nm, sub, sc); ul.append(li);
-    });
+    res.forEach((r, i) => ul.append(rankRow(r, i, r.id === me.id)));
   }
   if (firstGame) { firstGame = false; store.set('played', true); }
-  const solo = mode === 'solo';
-  $('solo-res').hidden = !solo; $('solo-stats').hidden = !solo; $('ranking').hidden = solo;
+  const solo = mode === 'solo', single = solo || arena;
+  $('solo-res').hidden = !single; $('solo-stats').hidden = !single;
+  $('ranking').hidden = solo || (arena && !hall.length); $('rank-title').hidden = !(arena && hall.length);
   $('again').hidden = mode === 'client';
-  $('over-hint').textContent = mode === 'client' ? 'Der Host startet die nächste Runde.' : 'oder Leertaste';
-  $('over-leave').textContent = solo ? 'Zum Menü' : 'Raum verlassen';
+  $('over-hint').textContent = mode === 'client' ? 'Der Host startet die nächste Runde.'
+    : arena ? 'Platz ' + extra.rank + ' von ' + extra.n + ' · Leertaste für den nächsten Versuch' : 'oder Leertaste';
+  $('over-leave').textContent = solo ? 'Zum Menü' : arena ? 'Arena verlassen' : 'Raum verlassen';
   showPanel('over');
   if (mode !== 'client') setTimeout(() => $('again').focus({ preventScroll: true }), 50);
 }
 
 function enterLobby() {
   state = 'lobby';
-  setArena(false);
+  setArena('screen');
   $('room-code').textContent = roomCode;
   const link = location.origin + location.pathname + '?raum=' + roomCode;
   $('invite-link').value = link;
@@ -1621,10 +1501,15 @@ function renderLobby(playing) {
   if (mode === 'host') st.textContent = roster.length < 2 ? 'Schick den Link oder Code an deine Freunde. Du kannst auch allein starten.' : roster.length + ' von 4 Lichtern im Raum.';
   else st.textContent = playing ? 'Eine Runde läuft gerade – du bist bei der nächsten dabei.' : 'Warte, bis der Host die Runde startet …';
 }
-function leaveRoom() { disconnect(); goMenu(); }
+function leaveRoom() { if (mode === 'arena') leaveArena(); else disconnect(); goMenu(); }
+function again(e) { if (mode === 'host') hostStartRound(); else if (mode === 'arena') arenaRespawn(); else if (mode === 'solo') startSolo(e); }
 
 $('start').addEventListener('click', startSolo);
-$('again').addEventListener('click', e => { if (mode === 'host') hostStartRound(); else startSolo(e); });
+$('again').addEventListener('click', again);
+$('to-arena').addEventListener('click', () => { state = 'arena'; showPanel('arena'); arenaStatus(''); refreshOnline(); setTimeout(() => $('arena-name').focus(), 50); });
+$('arena-back').addEventListener('click', () => goMenu());
+$('arena-join').addEventListener('click', joinArena);
+$('arena-name').addEventListener('keydown', e => { if (e.key === 'Enter') joinArena(); });
 $('to-mp').addEventListener('click', () => { state = 'mp'; showPanel('mp'); mpStatus(''); mpAvailable(); setTimeout(() => $('name-in').focus(), 50); });
 $('mp-back').addEventListener('click', () => { if (peer) disconnect(); goMenu(); });
 $('host').addEventListener('click', hostRoom);
@@ -1640,7 +1525,7 @@ $('copy').addEventListener('click', () => {
 });
 $('resume').addEventListener('click', e => { e.stopPropagation(); setPaused(false); });
 $('mute').addEventListener('click', e => { e.stopPropagation(); toggleMute(); });
-$('name-in').value = store.get('name', '');
+$('name-in').value = $('arena-name').value = store.get('name', '');
 $('menu-best').textContent = fmt(best);
 
 function setPaused(p) {
@@ -1673,7 +1558,7 @@ window.addEventListener('keydown', e => {
   if (e.target && e.target.tagName === 'INPUT') return;
   if (e.code === 'Space' || e.code === 'Enter') {
     if (state === 'menu') { e.preventDefault(); startSolo(); }
-    else if (state === 'over' && mode !== 'client') { e.preventDefault(); mode === 'host' ? hostStartRound() : startSolo(); }
+    else if (state === 'over' && mode !== 'client') { e.preventDefault(); again(); }
     else if (paused) { e.preventDefault(); setPaused(false); }
   } else if (e.code === 'Escape' || e.code === 'KeyP') setPaused(!paused);
   else if (e.code === 'KeyM') toggleMute();
@@ -1681,8 +1566,12 @@ window.addEventListener('keydown', e => {
 window.addEventListener('blur', () => setPaused(true));
 document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
 document.addEventListener('contextmenu', e => { if (state === 'play') e.preventDefault(); });
-window.addEventListener('resize', () => { resize(); if (mouse.seen) { mouse.x = (mouse.sx - vox) / vs; mouse.y = (mouse.sy - voy) / vs; } });
-window.addEventListener('beforeunload', () => { if (peer) try { peer.destroy(); } catch (e) {} });
+window.addEventListener('resize', () => {
+  resize();
+  if (mouse.seen) { mouse.x = (mouse.sx - vox) / vs; mouse.y = (mouse.sy - voy) / vs; }
+  if (mode === 'arena') send({ t: 'view', ...viewSize() });
+});
+window.addEventListener('beforeunload', () => { if (peer) try { peer.destroy(); } catch (e) {} if (ws) try { ws.close(); } catch (e) {} });
 
 resize();
 P.x = AW / 2; P.y = AH / 2; me.alive = true;
@@ -1701,9 +1590,13 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  if (state === 'menu' || state === 'mp' || state === 'lobby') {
+  if (state === 'menu' || state === 'arena' || state === 'mp' || state === 'lobby') {
     menuDemo(now, dt);
   } else if (!paused) {
+    if (camMode) {
+      layoutView();
+      if (mouse.seen) { mouse.x = (mouse.sx - vox) / vs; mouse.y = (mouse.sy - voy) / vs; }
+    }
     const ts = slowT > 0 ? 0.3 : 1;
     if (slowT > 0) slowT -= dt;
     const sdt = dt * ts;
@@ -1718,8 +1611,9 @@ function frame(now) {
         if (mode === 'host') sendLobby();
       }
     }
-    if (mode === 'client') smoothView(dt);
+    if (mode === 'client' || mode === 'arena') smoothView(dt);
   }
+  if (camMode) { layoutView(); gridFollow(); }
   netWatch(now);
   if (!paused) updateFx(state === 'play' && mode === 'solo' && slowT > 0 ? dt * 0.3 : dt);
   updateGrid(Math.min(dt, 1 / 30));

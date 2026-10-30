@@ -1,0 +1,15 @@
+# Render-Blueprint für den Arena-Server (render.com → New → Blueprint → dieses Repository)
+services:
+  - type: web
+    name: lichtschlinge-arena
+    runtime: node
+    plan: free
+    buildCommand: cd server && npm ci
+    startCommand: node server/server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: MAX_PLAYERS
+        value: "200"
+      - key: NODE_VERSION
+        value: "22"
