@@ -5,7 +5,7 @@ name: Apps
 on:
   push:
     branches: [main]
-    paths: ['src/**', 'app/**', '.github/workflows/apps.yml']
+    paths: ['src/**', 'app/**', 'music/**', '.github/workflows/apps.yml']
   workflow_dispatch:
 
 permissions:
