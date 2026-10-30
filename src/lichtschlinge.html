@@ -889,7 +889,7 @@ function smoothView(dt) {
 // ---------- Arena (eigener Server über WebSocket) ----------
 // Adresse des Arena-Servers nach dem Einrichten hier eintragen, z. B. 'wss://lichtschlinge-arena.onrender.com'.
 // Ohne Eintrag: ?server=wss://… in der Adresse, oder die Seite wird direkt vom Arena-Server ausgeliefert.
-const ARENA_URL = '';
+const ARENA_URL = 'wss://lichtschlinge-arena.onrender.com';
 let ws = null, lb = null, hall = [], closeReason = '';
 let arenaBest = store.get('bestArena', 0);
 function arenaUrl() {

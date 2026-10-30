@@ -47,7 +47,7 @@ Auf dem Handy: Finger steuert, Doppeltipp löst die Schockwelle aus.
 Der Server (`server/server.js`, Node.js + WebSocket) simuliert die Welt mit 30 Takten pro Sekunde und schickt jedem Licht 15-mal pro Sekunde nur den Ausschnitt um sich herum. Er liefert unter seiner eigenen Adresse auch das Spiel aus.
 
 **Render (am einfachsten):** render.com → *New* → *Blueprint* → dieses Repository wählen. `render.yaml` richtet alles ein. Danach ist das Spiel unter `https://<name>.onrender.com` spielbar.
-Damit auch die GitHub-Pages-Seite die Arena findet, in `src/lichtschlinge.html` die Konstante `ARENA_URL` auf `wss://<name>.onrender.com` setzen und `node build.mjs` ausführen.
+Die GitHub-Pages-Seite verbindet sich mit `wss://lichtschlinge-arena.onrender.com` (Konstante `ARENA_URL` in `src/lichtschlinge.html`; nach Änderungen `node build.mjs`).
 
 **Andere Hoster:** Das `Dockerfile` baut einen Container (Port über `PORT`, Standard 8787).
 
