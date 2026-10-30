@@ -1,0 +1,10 @@
+{
+  "appId": "io.github.toyyoda.lichtschlinge",
+  "appName": "Lichtschlinge",
+  "webDir": "www",
+  "backgroundColor": "#06040f",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true
+  }
+}

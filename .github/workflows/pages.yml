@@ -25,7 +25,7 @@ jobs:
       - name: Seite zusammenstellen
         run: |
           mkdir _site
-          cp index.html .nojekyll _site/
+          cp index.html privacy.html .nojekyll _site/
       - uses: actions/configure-pages@v5
         with:
           enablement: true

@@ -1,0 +1,12 @@
+"AppBuild"
+{
+	"AppID" "APP_ID"
+	"Desc" "Lichtschlinge Build"
+	"ContentRoot" "..\content\"
+	"BuildOutput" "..\output\"
+	"Depots"
+	{
+		"DEPOT_ID_WINDOWS" "depot_windows.vdf"
+		"DEPOT_ID_LINUX" "depot_linux.vdf"
+	}
+}

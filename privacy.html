@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lichtschlinge – Datenschutz</title>
+<style>
+  :root { --bg: #06040f; --fg: #ece8ff; --mute: #a59cc8; --accent: #4ff0ff; color-scheme: dark; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 68ch; margin: 0 auto; padding: 32px max(16px, env(safe-area-inset-left, 0px)) 64px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  h2 { font-size: 19px; margin: 32px 0 8px; color: var(--accent); }
+  h3 { font-size: 16px; margin: 20px 0 4px; }
+  p, li { color: var(--fg); }
+  .mute { color: var(--mute); font-size: 14px; }
+  a { color: var(--accent); }
+  hr { border: 0; border-top: 1px solid #2c2550; margin: 48px 0; }
+</style>
+</head>
+<body>
+<main>
+<h1>Datenschutzerklärung – Lichtschlinge</h1>
+<p class="mute">Stand: 30.10.2026 · <a href="#en">English version below</a></p>
+
+<h2>Verantwortlich</h2>
+<p>[Vor- und Nachname]<br>[Straße und Hausnummer]<br>[PLZ Ort, Land]<br>E-Mail: [E-Mail-Adresse]</p>
+
+<h2>Kurz gesagt</h2>
+<ul>
+  <li>Kein Konto, keine Werbung, keine Analyse- oder Tracking-Dienste, kein Verkauf von Daten.</li>
+  <li>Allein gespielt verlässt nichts dein Gerät.</li>
+  <li>Online (Arena, Mit Freunden) werden nur die Daten übertragen, die zum gemeinsamen Spielen nötig sind: der Name, den du selbst eingibst, und deine Spielzüge. Dabei ist technisch bedingt deine IP-Adresse sichtbar.</li>
+</ul>
+
+<h2>Daten auf deinem Gerät</h2>
+<p>Das Spiel speichert lokal auf deinem Gerät (Browser-Speicher bzw. App-Speicher): deine Rekorde, den zuletzt eingegebenen Spielernamen und die Ton-Einstellung. Diese Daten werden nicht übertragen. Du kannst sie löschen, indem du die Website-Daten im Browser bzw. die App-Daten in den Systemeinstellungen löschst oder die App deinstallierst.</p>
+
+<h2>Arena (Online-Modus mit bis zu 200 Spielern)</h2>
+<p>Wenn du die Arena betrittst, verbindet sich das Spiel verschlüsselt (WebSocket über TLS) mit unserem Spielserver. Übertragen werden: der von dir gewählte Spielername (frei wählbar, bitte keinen echten Namen nötig), deine Position und Bewegungen im Spiel, geschlossene Schlingen und Spielereignisse. Der Server verarbeitet diese Daten nur im Arbeitsspeicher, solange du verbunden bist. Gespeichert wird lediglich eine Bestenliste (Spielername, Punkte, Spielwerte) der besten Ergebnisse seit dem letzten Serverneustart; sie ist für alle Spieler sichtbar und verschwindet beim Neustart des Servers. Andere Spieler sehen deinen Spielernamen, deine Position und deine Punkte.</p>
+<p>Der Server läuft bei Render (Render Services, Inc., USA). Für den Verbindungsaufbau verarbeitet der Hoster deine IP-Adresse und kann technische Verbindungsprotokolle führen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Bereitstellung des von dir gewünschten Online-Spiels). Bei Übermittlungen in die USA stützt sich Render auf die EU-Standardvertragsklauseln bzw. das EU-US Data Privacy Framework.</p>
+
+<h2>Mit Freunden (bis zu 4 Spieler)</h2>
+<p>Dieser Modus verbindet die Geräte der Mitspieler direkt miteinander (WebRTC). Für das Zusammenfinden nutzt das Spiel den Vermittlungsdienst von PeerJS (peerjs.com); dieser sieht deine IP-Adresse und eine zufällige Raum-Kennung. Falls keine direkte Verbindung möglich ist, können Weiterleitungsserver (STUN/TURN) von PeerJS bzw. Google beteiligt sein. Bei der direkten Verbindung sehen deine Mitspieler technisch bedingt deine IP-Adresse. Übertragen werden dein Spielername und deine Spielzüge. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.</p>
+
+<h2>Webversion</h2>
+<p>Die Webversion wird über GitHub Pages (GitHub, Inc., USA) ausgeliefert; GitHub verarbeitet dabei deine IP-Adresse. Die Webversion lädt Schriftarten von Google Fonts und Programmbibliotheken von Cloudflare (cdnjs), wobei deine IP-Adresse an diese Anbieter übermittelt wird. Die Apps (Steam, Android) bringen Schriften und Bibliotheken selbst mit und laden sie nicht nach.</p>
+
+<h2>Steam und Google Play</h2>
+<p>Beim Kauf, Download und Start über Steam bzw. Google Play gelten zusätzlich die Datenschutzbestimmungen von Valve bzw. Google. Wir erhalten von diesen Plattformen nur zusammengefasste Statistiken, keine persönlichen Daten.</p>
+
+<h2>Kinder</h2>
+<p>Das Spiel richtet sich nicht an Kinder unter 13 Jahren und erhebt wissentlich keine Daten von ihnen.</p>
+
+<h2>Deine Rechte</h2>
+<p>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch sowie das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren. Da wir außer der flüchtigen Bestenliste nichts dauerhaft speichern, liegen uns in der Regel keine Daten zu dir vor. Wende dich bei Fragen an die oben genannte E-Mail-Adresse.</p>
+
+<hr id="en">
+
+<h1>Privacy Policy – Lichtschlinge</h1>
+<p class="mute">Last updated: 30 Oct 2026</p>
+
+<h2>Controller</h2>
+<p>[Full name]<br>[Street address]<br>[Postcode, city, country]<br>Email: [email address]</p>
+
+<h2>In short</h2>
+<ul>
+  <li>No account, no ads, no analytics or tracking services, no sale of data.</li>
+  <li>When you play alone, nothing leaves your device.</li>
+  <li>Online (Arena, With Friends) only what is needed to play together is transmitted: the name you enter yourself and your in-game moves. Your IP address is technically visible in the process.</li>
+</ul>
+
+<h2>Data on your device</h2>
+<p>The game stores your high scores, the last player name you entered and the sound setting locally on your device. This data is not transmitted. You can delete it by clearing the site data in your browser or the app data in your system settings, or by uninstalling the app.</p>
+
+<h2>Arena (online mode for up to 200 players)</h2>
+<p>When you enter the Arena, the game connects to our game server over an encrypted connection (WebSocket over TLS). It transmits the player name you chose (any name, no real name needed), your position and movements, closed loops and game events. The server keeps this data in memory only while you are connected. The only thing kept is a leaderboard (player name, score, game stats) of the best results since the last server restart; it is visible to all players and is cleared when the server restarts. Other players see your player name, position and score.</p>
+<p>The server is hosted by Render (Render Services, Inc., USA). To establish the connection the host processes your IP address and may keep technical connection logs. Legal basis: Art. 6(1)(b) GDPR (providing the online game you requested). For transfers to the USA, Render relies on the EU Standard Contractual Clauses and the EU-US Data Privacy Framework.</p>
+
+<h2>With Friends (up to 4 players)</h2>
+<p>This mode connects the players' devices directly (WebRTC). To find each other, the game uses the PeerJS signalling service (peerjs.com), which sees your IP address and a random room ID. If no direct connection is possible, relay servers (STUN/TURN) run by PeerJS or Google may be involved. Over the direct connection your fellow players can technically see your IP address. Your player name and in-game moves are transmitted. Legal basis: Art. 6(1)(b) GDPR.</p>
+
+<h2>Web version</h2>
+<p>The web version is served via GitHub Pages (GitHub, Inc., USA), which processes your IP address. It loads fonts from Google Fonts and libraries from Cloudflare (cdnjs), which also receive your IP address. The apps (Steam, Android) ship fonts and libraries themselves and do not load them from the internet.</p>
+
+<h2>Steam and Google Play</h2>
+<p>When you buy, download or launch the game via Steam or Google Play, the privacy policies of Valve or Google also apply. We only receive aggregated statistics from these platforms, no personal data.</p>
+
+<h2>Children</h2>
+<p>The game is not directed at children under 13 and does not knowingly collect data from them.</p>
+
+<h2>Your rights</h2>
+<p>You have the right of access, rectification, erasure, restriction of processing, data portability and objection, and the right to lodge a complaint with a data protection authority. Apart from the temporary leaderboard we do not store anything permanently, so we usually hold no data about you. Please contact us at the email address above with any questions.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "name": "lichtschlinge",
+  "productName": "Lichtschlinge",
+  "version": "1.0.0",
+  "description": "Lichtschlinge – Maus-Actionspiel",
+  "author": "ToyYoda",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "electron/main.cjs",
+  "scripts": {
+    "www": "node build-www.mjs",
+    "start": "npm run www && electron .",
+    "dist:win": "npm run www && electron-builder --win dir zip",
+    "dist:linux": "npm run www && electron-builder --linux dir tar.gz",
+    "android:sync": "npm run www && cap sync android"
+  },
+  "build": {
+    "appId": "io.github.toyyoda.lichtschlinge",
+    "productName": "Lichtschlinge",
+    "directories": { "output": "dist", "buildResources": "assets" },
+    "files": ["electron/**", "www/**", "package.json"],
+    "asar": true,
+    "win": { "icon": "assets/icon.png" },
+    "linux": { "icon": "assets/icon.png", "category": "Game", "executableName": "lichtschlinge" }
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "@fontsource/chakra-petch": "5.3.0",
+    "@fontsource/unbounded": "5.3.0",
+    "electron": "42.11.18",
+    "electron-builder": "26.17.0",
+    "peerjs": "1.5.4"
+  }
+}

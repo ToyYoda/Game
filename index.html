@@ -49,7 +49,8 @@ body.playing #hud, body.paused #hud, body.spectating #hud { opacity: 1; }
 #best-box { text-align: right; justify-self: end; }
 #best { font-family: var(--f-display); font-weight: 500; font-size: clamp(16px, 2.6vw, 22px); color: var(--amber); }
 #board { display: grid; gap: 2px; font-size: 13px; }
-#board div { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+#board div { display: flex; gap: 8px; justify-content: flex-end; align-items: center; white-space: nowrap; }
+#board div span:first-child { max-width: 11ch; overflow: hidden; text-overflow: ellipsis; }
 #board b { font-family: var(--f-display); font-weight: 500; font-size: 13px; min-width: 4ch; text-align: right; }
 #board .out { opacity: .4; }
 #board .me { color: var(--lumen); }
@@ -168,6 +169,7 @@ body.playing #mute { opacity: .35; }
       <button class="alt" id="to-mp" type="button">Mit Freunden</button>
     </div>
     <p class="small">Rekord allein: <span id="menu-best">0</span></p>
+    <button class="link" id="quit" type="button" hidden>Beenden</button>
   </div>
 </div>
 
@@ -1161,7 +1163,7 @@ function pulse() {
 }
 
 // ---------- Netzwerk (PeerJS über WebRTC, der Host simuliert die Welt) ----------
-const PEER_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js';
+const PEER_SRC = window.LS_PEER_SRC || 'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js';
 const ROOM_PREFIX = 'lichtschlinge-v1-';
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 let peer = null, hostConn = null, roomCode = '';
@@ -1798,7 +1800,7 @@ function drawHint() {
   if (state !== 'play') return;
   let msg = '', a = 1;
   const gt = gameTime();
-  if (!me.alive && mode !== 'solo') msg = 'Du bist verglüht – die anderen spielen noch';
+  if (!me.alive && (mode === 'host' || mode === 'client')) msg = 'Du bist verglüht – die anderen spielen noch';
   else if (firstGame && gt < 14) {
     msg = gt < 7 ? 'Kreise Gegner mit deinem Lichtschweif ein' : 'Klick: Schockwelle, wenn der Ring voll ist';
     a = gt < 7 ? Math.min(1, gt * 2, (7 - gt) * 2) : Math.min(1, (gt - 7) * 2, (14 - gt) * 2);
@@ -1878,6 +1880,24 @@ function render(now) {
 const body = document.body;
 const PANELS = ['menu', 'arena', 'mp', 'lobby', 'over', 'pause'];
 function showPanel(id) { for (const p of PANELS) $(p).classList.toggle('off', p !== id); }
+
+// ---------- App-Fassung (Steam/Electron, Android/Capacitor) ----------
+const WEB_URL = 'https://toyyoda.github.io/Game/';
+const desktopApp = window.lsApp || null;                                   // aus electron/preload.cjs
+const capApp = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? window.Capacitor : null;
+const IS_APP = !!(desktopApp || capApp);
+function quitApp() {
+  if (desktopApp) desktopApp.quit();
+  else if (capApp && capApp.Plugins.App) capApp.Plugins.App.exitApp();
+}
+if (IS_APP) $('quit').hidden = false;
+// Android-Zurück-Taste: eine Ebene zurück, im Hauptmenü beenden
+if (capApp && capApp.Plugins.App) capApp.Plugins.App.addListener('backButton', () => {
+  if (state === 'play' && mode === 'solo') setPaused(!paused);
+  else if (state === 'play' || state === 'over' || state === 'lobby') leaveRoom();
+  else if (state === 'mp' || state === 'arena') { if (peer) disconnect(); goMenu(); }
+  else quitApp();
+});
 
 function goMenu() {
   state = 'menu'; paused = false;
@@ -1987,7 +2007,8 @@ function enterLobby() {
   state = 'lobby';
   setArena('screen');
   $('room-code').textContent = roomCode;
-  const link = location.origin + location.pathname + '?raum=' + roomCode;
+  // Aus der App heraus führt der Link auf die Webseite, damit Freunde ohne App mitspielen können
+  const link = (IS_APP || !location.protocol.startsWith('http') ? WEB_URL : location.origin + location.pathname) + '?raum=' + roomCode;
   $('invite-link').value = link;
   $('mp-start').hidden = mode !== 'host';
   renderLobby(false);
@@ -2010,6 +2031,7 @@ function again(e) { if (mode === 'host') hostStartRound(); else if (mode === 'ar
 
 $('start').addEventListener('click', startSolo);
 $('again').addEventListener('click', again);
+$('quit').addEventListener('click', quitApp);
 $('to-arena').addEventListener('click', () => { state = 'arena'; showPanel('arena'); arenaStatus(''); refreshOnline(); setTimeout(() => $('arena-name').focus(), 50); });
 $('arena-back').addEventListener('click', () => goMenu());
 $('arena-join').addEventListener('click', joinArena);
@@ -2065,6 +2087,7 @@ window.addEventListener('keydown', e => {
     else if (state === 'over' && mode !== 'client') { e.preventDefault(); again(); }
     else if (paused) { e.preventDefault(); setPaused(false); }
   } else if (e.code === 'Escape' || e.code === 'KeyP') setPaused(!paused);
+  else if (e.code === 'F11' && desktopApp) { e.preventDefault(); desktopApp.toggleFullscreen(); }
   else if (e.code === 'KeyM') toggleMute();
 });
 window.addEventListener('blur', () => setPaused(true));

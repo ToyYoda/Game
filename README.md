@@ -64,6 +64,13 @@ cd server && npm install && cd .. && node build.mjs && node server/server.js
 
 Dann `http://localhost:8787` öffnen.
 
+## Apps (Steam, Google Play)
+
+Desktop-App (Electron) und Android-App (Capacitor) liegen in `app/`, Store-Grafiken und -Texte in `store/`.
+Die Builds entstehen automatisch in GitHub Actions („Apps“). Schritt-für-Schritt-Anleitung: [VEROEFFENTLICHUNG.md](VEROEFFENTLICHUNG.md).
+
+Lokal: `cd app && npm install && npm start` startet die Desktop-App (`--windowed` für ein Fenster).
+
 ## Entwicklung
 
 Quellen sind `src/lichtschlinge.html` (Seite) und `src/sim.js` (Spiellogik, gemeinsam für Browser und Arena-Server). `node build.mjs` erzeugt daraus die eigenständige `index.html`.
