@@ -98,6 +98,8 @@ button.go:disabled, button.alt:disabled { opacity: .35; cursor: default; transfo
 button.link { font: 600 13px var(--f-ui); letter-spacing: .06em; color: var(--mute); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 4px; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
 .small { font-size: 12px; color: var(--mute); margin: 0; letter-spacing: .04em; }
+.legal a { color: var(--mute); text-underline-offset: 3px; }
+.legal a:hover { color: var(--ink); }
 .field-wrap { display: flex; flex-direction: column; gap: 6px; width: 100%; text-align: left; }
 input.field {
   font: 600 16px var(--f-ui); color: var(--ink); background: rgba(255,255,255,.06);
@@ -166,6 +168,7 @@ body.playing #mute { opacity: .35; }
       <button class="link" id="lang" type="button" data-i18n="menu.lang">English</button>
       <button class="link" id="quit" type="button" data-i18n="menu.quit" hidden>Beenden</button>
     </div>
+    <p class="small legal"><a href="https://toyyoda.github.io/Game/impressum.html" target="_blank" rel="noopener" data-i18n="menu.legal">Impressum</a> · <a href="https://toyyoda.github.io/Game/privacy.html" target="_blank" rel="noopener" data-i18n="menu.privacy">Datenschutz</a></p>
   </div>
 </div>
 
@@ -275,7 +278,7 @@ const I18N = {
     'r.chain': 'Kette', 'r.chain.d': 'Jede volle Schlinge erhöht den Multiplikator und verlängert den Schweif.',
     'r.warn': 'Achtung', 'r.warn.d': 'Eine Berührung und es ist vorbei. Rote Klingen zerschneiden den Schweif.',
     'menu.solo': 'Allein spielen', 'menu.arena': 'Arena', 'menu.friends': 'Mit Freunden', 'menu.best': 'Rekord allein:',
-    'menu.quit': 'Beenden', 'menu.lang': 'English',
+    'menu.quit': 'Beenden', 'menu.lang': 'English', 'menu.legal': 'Impressum', 'menu.privacy': 'Datenschutz',
     'arena.lead': 'Eine riesige Welt für bis zu 200 Lichter. Fang Gegner, zerreiß fremde Ketten und kletter in der Rangliste nach oben. Wer verglüht, steigt sofort wieder ein.',
     'name.label': 'Dein Name', 'name.ph': 'Name', 'arena.join': 'Arena betreten', 'back': 'Zurück',
     'mp.lead': 'Bis zu vier Lichter in einer Arena. Wer am meisten fängt, gewinnt. Wer ein anderes Licht in seine Schlinge nimmt, zerreißt dessen Kette.',
@@ -325,7 +328,7 @@ const I18N = {
     'r.chain': 'Chain', 'r.chain.d': 'Every loop that catches something raises the multiplier and lengthens your trail.',
     'r.warn': 'Careful', 'r.warn.d': 'One touch and it’s over. Red blades cut your trail.',
     'menu.solo': 'Play solo', 'menu.arena': 'Arena', 'menu.friends': 'With friends', 'menu.best': 'Solo best:',
-    'menu.quit': 'Quit', 'menu.lang': 'Deutsch',
+    'menu.quit': 'Quit', 'menu.lang': 'Deutsch', 'menu.legal': 'Legal notice', 'menu.privacy': 'Privacy',
     'arena.lead': 'A huge world for up to 200 lights. Catch enemies, break other players’ chains and climb the leaderboard. Burn out and you’re straight back in.',
     'name.label': 'Your name', 'name.ph': 'Name', 'arena.join': 'Enter arena', 'back': 'Back',
     'mp.lead': 'Up to four lights in one arena. Whoever catches the most wins. Catch another light in your loop to break its chain.',
@@ -378,6 +381,8 @@ function applyLang() {
   for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
   for (const el of document.querySelectorAll('[data-i18n-ph]')) el.placeholder = t(el.dataset.i18nPh);
   for (const el of document.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  // Rechtliche Seiten: englische Leser landen direkt beim englischen Teil
+  for (const el of document.querySelectorAll('.legal a')) el.href = el.href.split('#')[0] + (lang === 'en' ? '#en' : '');
 }
 
 const store = {
