@@ -20,7 +20,7 @@ Die Builds findest du nach jedem Push auf `main` unter GitHub → Actions → �
 
 ## Vorher erledigen (beide Stores)
 
-1. **Datenschutzerklärung ausfüllen:** In `privacy.html` die Platzhalter `[Vor- und Nachname]`, Anschrift und `[E-Mail-Adresse]` ersetzen (deutscher und englischer Teil). Beide Stores verlangen eine erreichbare Datenschutz-URL.
+1. **Datenschutzerklärung:** ausgefüllt unter https://toyyoda.github.io/Game/privacy.html. Bei Änderungen am Spiel (z. B. Werbung, Analyse, neue Online-Dienste) mit anpassen.
 2. **Impressum prüfen:** Wer in Deutschland Apps geschäftsmäßig anbietet (auch kostenlos mit Gewinnabsicht), braucht in der Regel ein Impressum. Im Zweifel rechtlich beraten lassen.
 3. **Arena-Server:** Der kostenlose Render-Tarif schläft ein und hat wenig Rechenleistung. Für eine Store-Veröffentlichung einen bezahlten Tarif mit einem vollen Kern wählen, sonst erleben neue Spieler beim ersten Start eine Minute Wartezeit.
 4. **Musik:** `music/theme.mp3` ablegen (siehe `music/LIESMICH.md`). Für Steam und Google Play muss die Musik kommerziell genutzt werden dürfen; bei Suno gilt das nur für Stücke, die mit einem bezahlten Tarif erzeugt wurden.

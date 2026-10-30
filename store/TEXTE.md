@@ -58,4 +58,4 @@ Your light follows the pointer and leaves a trail behind it. As soon as the trai
 
 ## Datenschutz-URL
 
-https://toyyoda.github.io/Game/privacy.html (Platzhalter für Name, Anschrift und E-Mail vorher ausfüllen)
+https://toyyoda.github.io/Game/privacy.html
