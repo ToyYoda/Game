@@ -20,6 +20,7 @@ Dein Licht folgt dem Zeiger und zieht einen Schweif hinter sich her. Sobald sich
 • Eine Idee, die sofort sitzt: Kreise zeichnen, Gegner einfangen, ausweichen
 • Fünf Gegnerarten: Jäger, Schwärme, Springer mit Ziellinie, Klingen, die deinen Schweif zerschneiden, und Bomben mit Kettenreaktion
 • Schockwelle per Klick, wenn es eng wird
+• Auf dem Handy: Neig das Gerät und lass dein Licht wie eine Kugel rollen – oder steuer mit dem Finger
 • Neon-Optik mit federndem Gitter, Leuchteffekten und Partikeln
 • Allein: Highscore-Jagd in kurzen, intensiven Runden
 • Mit Freunden: bis zu vier Lichter in einer Arena – wer ein anderes Licht in seine Schlinge nimmt, zerreißt dessen Kette
@@ -47,6 +48,7 @@ Your light follows the pointer and leaves a trail behind it. As soon as the trai
 • One idea that clicks instantly: draw circles, catch enemies, dodge
 • Five enemy types: hunters, swarms, dashers with aim lines, blades that cut your trail and bombs with chain reactions
 • Click to release a shockwave when things get tight
+• On phones: tilt the device and let your light roll like a ball – or steer with your finger
 • Neon look with a springy grid, glow and particles
 • Solo: chase the high score in short, intense runs
 • With Friends: up to four lights in one arena – catch another light in your loop to break its chain

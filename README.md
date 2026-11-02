@@ -43,7 +43,7 @@ Tasten (optional): `Leertaste` neue Runde, `Esc`/`P` Pause, `M` Ton (Musik und E
 
 Sprache: Deutsch oder Englisch, je nach Gerät; im Hauptmenü umschaltbar.
 Musik: `music/theme.mp3` (siehe `music/LIESMICH.md`); ohne Datei bleibt es still.
-Auf dem Handy: Finger steuert, Doppeltipp löst die Schockwelle aus.
+Auf dem Handy: Neigen steuert – das Licht rollt wie eine Kugel über den Bildschirm, die Haltung beim Rundenstart gilt als waagerecht; Tippen löst die Schockwelle aus. Im Menü auf „Steuerung: Finger“ umschaltbar (dann steuert der Finger, Doppeltipp = Schockwelle).
 
 ## Arena-Server einrichten
 

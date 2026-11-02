@@ -172,6 +172,7 @@ body.playing #mute { opacity: .35; }
     </div>
     <p class="small"><span data-i18n="menu.best">Rekord allein:</span> <span id="menu-best">0</span></p>
     <div class="row">
+      <button class="link" id="ctrl" type="button" hidden>Steuerung: Neigen</button>
       <button class="link" id="lang" type="button" data-i18n="menu.lang">English</button>
       <button class="link" id="quit" type="button" data-i18n="menu.quit" hidden>Beenden</button>
     </div>
@@ -782,6 +783,8 @@ const I18N = {
     'r.chain': 'Kette', 'r.chain.d': 'Jede volle Schlinge erhöht den Multiplikator und verlängert den Schweif.',
     'r.warn': 'Achtung', 'r.warn.d': 'Eine Berührung und es ist vorbei. Rote Klingen zerschneiden den Schweif.',
     'menu.solo': 'Allein spielen', 'menu.arena': 'Arena', 'menu.friends': 'Mit Freunden', 'menu.best': 'Rekord allein:',
+    'ctrl.tilt': 'Steuerung: Neigen', 'ctrl.touch': 'Steuerung: Finger',
+    'hint.tilt': 'Neig das Handy – dein Licht rollt wie eine Kugel', 'hint.tap': 'Tippen: Schockwelle, wenn der Ring voll ist',
     'menu.quit': 'Beenden', 'menu.lang': 'English', 'menu.legal': 'Impressum', 'menu.privacy': 'Datenschutz',
     'arena.lead': 'Eine riesige Welt für bis zu 200 Lichter. Fang Gegner, zerreiß fremde Ketten und kletter in der Rangliste nach oben. Wer verglüht, steigt sofort wieder ein.',
     'name.label': 'Dein Name', 'name.ph': 'Name', 'arena.join': 'Arena betreten', 'back': 'Zurück',
@@ -832,6 +835,8 @@ const I18N = {
     'r.chain': 'Chain', 'r.chain.d': 'Every loop that catches something raises the multiplier and lengthens your trail.',
     'r.warn': 'Careful', 'r.warn.d': 'One touch and it’s over. Red blades cut your trail.',
     'menu.solo': 'Play solo', 'menu.arena': 'Arena', 'menu.friends': 'With friends', 'menu.best': 'Solo best:',
+    'ctrl.tilt': 'Controls: tilt', 'ctrl.touch': 'Controls: touch',
+    'hint.tilt': 'Tilt your phone – your light rolls like a ball', 'hint.tap': 'Tap: shockwave when the ring is full',
     'menu.quit': 'Quit', 'menu.lang': 'Deutsch', 'menu.legal': 'Legal notice', 'menu.privacy': 'Privacy',
     'arena.lead': 'A huge world for up to 200 lights. Catch enemies, break other players’ chains and climb the leaderboard. Burn out and you’re straight back in.',
     'name.label': 'Your name', 'name.ph': 'Name', 'arena.join': 'Enter arena', 'back': 'Back',
@@ -990,7 +995,7 @@ function toggleMute() {
   initAudio(); if (master) master.gain.value = muted() ? 0 : 0.45;
 }
 // Erste Berührung irgendwo schaltet den Ton frei (Browser erlauben Ton erst nach einer Eingabe)
-window.addEventListener('pointerdown', () => initAudio(), { once: true, capture: true });
+window.addEventListener('pointerdown', () => { initAudio(); tiltPermission(); }, { once: true, capture: true });
 
 // ---------- Spiellogik aus sim.js ----------
 const { TYPES, TYPE_KEYS, PHASES, PLAYER_HUES, COMBO_T, TRAIL_LIFE, BOMB_R, PULSE_R, trailMax, segInter, segDist, polyArea, flat, unflat, World } = window.LS;
@@ -1096,7 +1101,50 @@ let mode = 'solo';        // solo | host | client | arena
 let paused = false;
 let world = null;         // nur allein oder beim Host
 const mouse = { sx: 0, sy: 0, x: 0, y: 0, seen: false };
-const P = { x: 0, y: 0, r: 9 };
+const P = { x: 0, y: 0, r: 9, vx: 0, vy: 0 };
+
+// ---------- Neigungssteuerung: das Licht rollt wie eine Kugel auf dem Bildschirm ----------
+// Gemessen wird die Schwerkraft (accelerationIncludingGravity) in Gerätekoordinaten.
+// Die Haltung beim Rundenstart gilt als waagerecht; geneigt wird relativ dazu.
+const tilt = { supported: false, on: false, f: null, n: null, sign: 1, last: 0 };
+tilt.supported = 'DeviceMotionEvent' in window && window.matchMedia('(pointer: coarse)').matches;
+let tiltPref = store.get('tilt', true);
+window.addEventListener('devicemotion', e => {
+  const g = e.accelerationIncludingGravity;
+  if (!g || g.x === null || g.x === undefined) return;
+  tilt.f = { x: g.x, y: g.y, z: g.z || 0 }; tilt.last = performance.now();
+});
+// iOS fragt einmal nach Erlaubnis, und nur aus einer Berührung heraus
+function tiltPermission() {
+  if (!tilt.supported || typeof DeviceMotionEvent.requestPermission !== 'function') return;
+  DeviceMotionEvent.requestPermission().catch(() => {});
+}
+function tiltCalibrate() {
+  if (!tilt.f) return;
+  tilt.n = { ...tilt.f };
+  // iOS meldet die Achsen mit umgekehrtem Vorzeichen; mit dem Bildschirm nach oben ist z bei Android positiv
+  tilt.sign = tilt.f.z >= 0 ? 1 : -1;
+}
+const tiltLive = () => tilt.f && performance.now() - tilt.last < 1500;
+// Beschleunigung in m/s² in Bildschirmrichtung (x nach rechts, y nach unten), passend zur Bildschirmdrehung
+function tiltAccel() {
+  const f = tilt.f, n = tilt.n;
+  if (!f || !n) return null;
+  const ax = -(f.x - n.x) * tilt.sign, ay = -(f.y - n.y) * tilt.sign;   // Hangabtrieb in Gerätekoordinaten (y nach oben)
+  const px = ax, py = -ay;                                              // im Hochformat: y nach unten
+  const deg = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
+  const r = deg * Math.PI / 180, c = Math.cos(r), sn = Math.sin(r);
+  // Kleine Totzone gegen Sensorrauschen und Zittern der Hand
+  const dz = v => Math.abs(v) < 0.15 ? 0 : v - Math.sign(v) * 0.15;
+  return { x: dz(px * c + py * sn), y: dz(-px * sn + py * c) };
+}
+function lockOrientation(on) {
+  // Beim Neigen soll sich der Bildschirm nicht mitdrehen; klappt nur, wo der Browser es erlaubt
+  try {
+    if (on && screen.orientation && screen.orientation.lock) screen.orientation.lock(screen.orientation.type).catch(() => {});
+    else if (!on && screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+  } catch (e) {}
+}
 const me = { id: 1, alive: false, hue: PLAYER_HUES[0] };
 let trail = [];
 let parts = [], texts = [], flashes = [], rings = [];
@@ -1260,14 +1308,33 @@ function trailSample() {
 }
 
 let lastSend = 0;
+// Wie stark die Neigung beschleunigt: 1 m/s² Hangabtrieb ergibt 300 Einheiten/s²
+const TILT_GAIN = 300;
 function updateLocal(dt, now) {
   if (!me.alive) return;
-  const dx = mouse.x - P.x, dy = mouse.y - P.y;
-  // Erste Ordnung: folgt ohne Überschwingen, sonst entstehen ungewollte Mini-Schlingen
-  let vx = dx * 16, vy = dy * 16;
-  const maxV = 1150, v = Math.hypot(vx, vy);
-  if (v > maxV) { vx *= maxV / v; vy *= maxV / v; }
-  P.x = clamp(P.x + vx * dt, P.r, AW - P.r); P.y = clamp(P.y + vy * dt, P.r, AH - P.r);
+  const maxV = 1150;
+  if (tilt.on && !tiltLive()) tilt.on = false;   // Sensor verstummt: zurück zur Fingersteuerung
+  if (tilt.on) {
+    // Kugel auf schiefer Ebene: Hangabtrieb beschleunigt, leichte Rollreibung bremst, Ränder federn
+    const a = tiltAccel();
+    if (a) { P.vx += a.x * TILT_GAIN * dt; P.vy += a.y * TILT_GAIN * dt; }
+    const fr = Math.exp(-0.9 * dt); P.vx *= fr; P.vy *= fr;
+    const v = Math.hypot(P.vx, P.vy);
+    if (v > maxV) { P.vx *= maxV / v; P.vy *= maxV / v; }
+    P.x += P.vx * dt; P.y += P.vy * dt;
+    if (P.x < P.r) { P.x = P.r; P.vx = Math.abs(P.vx) * 0.45; }
+    if (P.x > AW - P.r) { P.x = AW - P.r; P.vx = -Math.abs(P.vx) * 0.45; }
+    if (P.y < P.r) { P.y = P.r; P.vy = Math.abs(P.vy) * 0.45; }
+    if (P.y > AH - P.r) { P.y = AH - P.r; P.vy = -Math.abs(P.vy) * 0.45; }
+  } else {
+    const dx = mouse.x - P.x, dy = mouse.y - P.y;
+    // Erste Ordnung: folgt ohne Überschwingen, sonst entstehen ungewollte Mini-Schlingen
+    let vx = dx * 16, vy = dy * 16;
+    const v = Math.hypot(vx, vy);
+    if (v > maxV) { vx *= maxV / v; vy *= maxV / v; }
+    P.vx = vx; P.vy = vy;
+    P.x = clamp(P.x + vx * dt, P.r, AW - P.r); P.y = clamp(P.y + vy * dt, P.r, AH - P.r);
+  }
   updateTrail(now, false);
   if (state !== 'play') return;
 
@@ -1930,7 +1997,7 @@ function drawNames() {
 }
 
 function drawCursor() {
-  if (!mouse.seen || state !== 'play' || !me.alive) return;
+  if (!mouse.seen || state !== 'play' || !me.alive || tilt.on) return;
   ctx.strokeStyle = 'rgba(236,232,255,0.55)'; ctx.lineWidth = 1.2;
   const x = mouse.sx, y = mouse.sy, s = 7;
   ctx.beginPath();
@@ -1949,12 +2016,16 @@ function drawTexts() {
   }
 }
 
+let tiltHints = store.get('tiltHints', 3);   // die ersten drei Runden mit Neigen zeigen Hinweise
 function drawHint() {
   if (state !== 'play') return;
   let msg = '', a = 1;
   const gt = gameTime();
   if (!me.alive && (mode === 'host' || mode === 'client')) msg = t('hint.spectate');
-  else if (firstGame && gt < 14) {
+  else if (tilt.on && tiltHints && gt < 14) {
+    msg = gt < 7 ? t('hint.tilt') : t('hint.tap');
+    a = gt < 7 ? Math.min(1, gt * 2, (7 - gt) * 2) : Math.min(1, (gt - 7) * 2, (14 - gt) * 2);
+  } else if (firstGame && gt < 14) {
     msg = gt < 7 ? t('hint.loop') : t('hint.pulse');
     a = gt < 7 ? Math.min(1, gt * 2, (7 - gt) * 2) : Math.min(1, (gt - 7) * 2, (14 - gt) * 2);
   }
@@ -2054,6 +2125,7 @@ if (capApp && capApp.Plugins.App) capApp.Plugins.App.addListener('backButton', (
 
 function goMenu() {
   state = 'menu'; paused = false;
+  lockOrientation(false);
   body.classList.remove('playing', 'paused', 'spectating');
   me.alive = true; trail = [];
   $('menu-best').textContent = fmt(best);
@@ -2076,7 +2148,10 @@ function beginPlay() {
   state = 'play'; paused = false;
   me.alive = true; trail = [];
   const rec = myRec();
-  if (mode === 'arena') { /* Position kommt vom Server */ }
+  P.vx = P.vy = 0;
+  tilt.on = tilt.supported && tiltPref && !!tiltLive();
+  if (tilt.on) { tiltCalibrate(); lockOrientation(true); }
+  if (mode === 'arena' || tilt.on) { if (tilt.on && mode !== 'arena' && rec) { P.x = rec.x; P.y = rec.y; } }
   else if (mouse.seen) { P.x = clamp(mouse.x, P.r, AW - P.r); P.y = clamp(mouse.y, P.r, AH - P.r); }
   else if (rec) { P.x = rec.x; P.y = rec.y; mouse.x = P.x; mouse.y = P.y; mouse.sx = vox + P.x * vs; mouse.sy = voy + P.y * vs; }
   parts = []; texts = []; flashes = []; rings = [];
@@ -2145,6 +2220,8 @@ function showOver(res, extra) {
     res.forEach((r, i) => ul.append(rankRow(r, i, r.id === me.id)));
   }
   if (firstGame) { firstGame = false; store.set('played', true); }
+  if (tilt.on && tiltHints > 0) { tiltHints--; store.set('tiltHints', tiltHints); }
+  lockOrientation(false);
   const solo = mode === 'solo', single = solo || arena;
   $('solo-res').hidden = !single; $('solo-stats').hidden = !single;
   $('ranking').hidden = solo || (arena && !hall.length); $('rank-title').hidden = !(arena && hall.length);
@@ -2184,10 +2261,13 @@ function again(e) { if (mode === 'host') hostStartRound(); else if (mode === 'ar
 $('start').addEventListener('click', startSolo);
 $('again').addEventListener('click', again);
 $('quit').addEventListener('click', quitApp);
+function updateCtrlBtn() { $('ctrl').hidden = !tilt.supported; $('ctrl').textContent = t(tiltPref ? 'ctrl.tilt' : 'ctrl.touch'); }
+updateCtrlBtn();
+$('ctrl').addEventListener('click', () => { tiltPref = !tiltPref; store.set('tilt', tiltPref); updateCtrlBtn(); });
 $('lang').addEventListener('click', () => {
   lang = lang === 'de' ? 'en' : 'de';
   store.set('lang', lang);
-  applyLang(); updateMuteBtn();
+  applyLang(); updateMuteBtn(); updateCtrlBtn();
   $('menu-best').textContent = fmt(best);
 });
 $('to-arena').addEventListener('click', () => { state = 'arena'; showPanel('arena'); arenaStatus(''); refreshOnline(); setTimeout(() => $('arena-name').focus(), 50); });
@@ -2215,6 +2295,7 @@ $('menu-best').textContent = fmt(best);
 function setPaused(p) {
   if (mode !== 'solo' || state !== 'play' || paused === p) return;
   paused = p;
+  if (!p && tilt.on) { tiltCalibrate(); P.vx = P.vy = 0; }   // nach der Pause neu ausrichten
   showPanel(p ? 'pause' : null);
   body.classList.toggle('playing', !p); body.classList.toggle('paused', p);
 }
@@ -2229,12 +2310,12 @@ window.addEventListener('pointermove', e => setMouse(e), { passive: true });
 window.addEventListener('pointerdown', e => {
   if (isUi(e.target)) return;
   setMouse(e);
-  // Auf Touch steuert der Finger; Schockwelle per zweitem Finger oder Doppeltipp
-  if (state === 'play' && (e.pointerType !== 'touch' || !e.isPrimary)) pulse();
+  // Auf Touch steuert der Finger (Schockwelle per zweitem Finger oder Doppeltipp); beim Neigen löst jedes Tippen sie aus
+  if (state === 'play' && (tilt.on || e.pointerType !== 'touch' || !e.isPrimary)) pulse();
 });
 let lastTap = 0;
 window.addEventListener('pointerup', e => {
-  if (e.pointerType === 'touch' && state === 'play') {
+  if (e.pointerType === 'touch' && state === 'play' && !tilt.on) {
     const t = performance.now(); if (t - lastTap < 280) pulse(); lastTap = t;
   }
 });
