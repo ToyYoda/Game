@@ -783,7 +783,7 @@ const I18N = {
     'r.chain': 'Kette', 'r.chain.d': 'Jede volle Schlinge erhöht den Multiplikator und verlängert den Schweif.',
     'r.warn': 'Achtung', 'r.warn.d': 'Eine Berührung und es ist vorbei. Rote Klingen zerschneiden den Schweif.',
     'menu.solo': 'Allein spielen', 'menu.arena': 'Arena', 'menu.friends': 'Mit Freunden', 'menu.best': 'Rekord allein:',
-    'ctrl.tilt': 'Steuerung: Neigen', 'ctrl.touch': 'Steuerung: Finger',
+    'ctrl.tilt': 'Steuerung: Neigen', 'ctrl.touch': 'Steuerung: Finger', 'hint.noTilt': 'Neigen ist hier nicht verfügbar – steuere mit dem Finger',
     'hint.tilt': 'Neig das Handy – dein Licht rollt wie eine Kugel', 'hint.tap': 'Tippen: Schockwelle, wenn der Ring voll ist',
     'menu.quit': 'Beenden', 'menu.lang': 'English', 'menu.legal': 'Impressum', 'menu.privacy': 'Datenschutz',
     'arena.lead': 'Eine riesige Welt für bis zu 200 Lichter. Fang Gegner, zerreiß fremde Ketten und kletter in der Rangliste nach oben. Wer verglüht, steigt sofort wieder ein.',
@@ -835,7 +835,7 @@ const I18N = {
     'r.chain': 'Chain', 'r.chain.d': 'Every loop that catches something raises the multiplier and lengthens your trail.',
     'r.warn': 'Careful', 'r.warn.d': 'One touch and it’s over. Red blades cut your trail.',
     'menu.solo': 'Play solo', 'menu.arena': 'Arena', 'menu.friends': 'With friends', 'menu.best': 'Solo best:',
-    'ctrl.tilt': 'Controls: tilt', 'ctrl.touch': 'Controls: touch',
+    'ctrl.tilt': 'Controls: tilt', 'ctrl.touch': 'Controls: touch', 'hint.noTilt': 'Tilt isn’t available here – steer with your finger',
     'hint.tilt': 'Tilt your phone – your light rolls like a ball', 'hint.tap': 'Tap: shockwave when the ring is full',
     'menu.quit': 'Quit', 'menu.lang': 'Deutsch', 'menu.legal': 'Legal notice', 'menu.privacy': 'Privacy',
     'arena.lead': 'A huge world for up to 200 lights. Catch enemies, break other players’ chains and climb the leaderboard. Burn out and you’re straight back in.',
@@ -1112,8 +1112,13 @@ let tiltPref = store.get('tilt', true);
 window.addEventListener('devicemotion', e => {
   const g = e.accelerationIncludingGravity;
   if (!g || g.x === null || g.x === undefined) return;
+  const first = !tilt.f;
   tilt.f = { x: g.x, y: g.y, z: g.z || 0 }; tilt.last = performance.now();
+  if (first) { store.set('tiltSeen', true); if (typeof updateCtrlBtn === 'function') updateCtrlBtn(); }
 });
+// Den Umschalter nur zeigen, wo wirklich Bewegungsdaten ankommen; in abgeschirmten Umgebungen
+// (eingebettete Vorschauen) bleibt der Sensor stumm. iOS liefert erst nach der Erlaubnis beim ersten Tippen.
+const tiltAvailable = () => tilt.supported && !!tilt.f;
 // iOS fragt einmal nach Erlaubnis, und nur aus einer Berührung heraus
 function tiltPermission() {
   if (!tilt.supported || typeof DeviceMotionEvent.requestPermission !== 'function') return;
@@ -1762,6 +1767,7 @@ function updateArenaBoard(score) {
 
 // ---------- Update ----------
 function updateFx(dt) {
+  if (noTiltT > 0 && state === 'play') noTiltT -= dt;
   hue = (hue + dt * 25) % 360;
   multBump = Math.max(0, multBump - dt * 5);
   for (const p of parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= Math.pow(0.08, dt); p.vy *= Math.pow(0.08, dt); }
@@ -2016,12 +2022,14 @@ function drawTexts() {
   }
 }
 
+let noTiltT = 0;   // Hinweis, wenn Neigen gewünscht, aber kein Sensor verfügbar ist
 let tiltHints = store.get('tiltHints', 3);   // die ersten drei Runden mit Neigen zeigen Hinweise
 function drawHint() {
   if (state !== 'play') return;
   let msg = '', a = 1;
   const gt = gameTime();
   if (!me.alive && (mode === 'host' || mode === 'client')) msg = t('hint.spectate');
+  else if (noTiltT > 0) { msg = t('hint.noTilt'); a = Math.min(1, noTiltT); }
   else if (tilt.on && tiltHints && gt < 14) {
     msg = gt < 7 ? t('hint.tilt') : t('hint.tap');
     a = gt < 7 ? Math.min(1, gt * 2, (7 - gt) * 2) : Math.min(1, (gt - 7) * 2, (14 - gt) * 2);
@@ -2150,6 +2158,7 @@ function beginPlay() {
   const rec = myRec();
   P.vx = P.vy = 0;
   tilt.on = tilt.supported && tiltPref && !!tiltLive();
+  noTiltT = tilt.supported && tiltPref && !tilt.on && store.get('tiltSeen', false) ? 4 : 0;
   if (tilt.on) { tiltCalibrate(); lockOrientation(true); }
   if (mode === 'arena' || tilt.on) { if (tilt.on && mode !== 'arena' && rec) { P.x = rec.x; P.y = rec.y; } }
   else if (mouse.seen) { P.x = clamp(mouse.x, P.r, AW - P.r); P.y = clamp(mouse.y, P.r, AH - P.r); }
@@ -2261,7 +2270,7 @@ function again(e) { if (mode === 'host') hostStartRound(); else if (mode === 'ar
 $('start').addEventListener('click', startSolo);
 $('again').addEventListener('click', again);
 $('quit').addEventListener('click', quitApp);
-function updateCtrlBtn() { $('ctrl').hidden = !tilt.supported; $('ctrl').textContent = t(tiltPref ? 'ctrl.tilt' : 'ctrl.touch'); }
+function updateCtrlBtn() { $('ctrl').hidden = !tiltAvailable(); $('ctrl').textContent = t(tiltPref ? 'ctrl.tilt' : 'ctrl.touch'); }
 updateCtrlBtn();
 $('ctrl').addEventListener('click', () => { tiltPref = !tiltPref; store.set('tilt', tiltPref); updateCtrlBtn(); });
 $('lang').addEventListener('click', () => {
