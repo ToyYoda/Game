@@ -1286,8 +1286,8 @@ function updateTrail(now, demo) {
     }
     trail.push(np);
   }
-  while (trail.length > 1 && now - trail[0].t > TRAIL_LIFE * 1000) trail.shift();
-  const rec = myRec(), maxLen = trailMax(rec ? rec.mult : 1);
+  while (trail.length > 1 && now - trail[0].t > TRAIL_LIFE * trailScale() * 1000) trail.shift();
+  const rec = myRec(), maxLen = trailMax(rec ? rec.mult : 1) * trailScale();
   let len = 0;
   for (let i = trail.length - 1; i > 0; i--) {
     len += Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y);
@@ -1313,8 +1313,11 @@ function trailSample() {
 }
 
 let lastSend = 0;
-// Wie stark die Neigung beschleunigt: 1 m/s² Hangabtrieb ergibt 300 Einheiten/s²
-const TILT_GAIN = 300;
+// Neigen: kräftige Beschleunigung, spürbare Reibung – schnell auf Tempo, kurze Wege bei Richtungswechseln.
+// Bei 15° Neigung (≈2,5 m/s²) stellt sich etwa 750 Einheiten/s ein, nach rund einer Drittelsekunde.
+const TILT_GAIN = 900, TILT_FRICTION = 3.0;
+// Im Neige-Modus ist der Schweif 15 % länger (Strecke und Lebensdauer)
+const trailScale = () => tilt.on ? 1.15 : 1;
 function updateLocal(dt, now) {
   if (!me.alive) return;
   const maxV = 1150;
@@ -1323,7 +1326,7 @@ function updateLocal(dt, now) {
     // Kugel auf schiefer Ebene: Hangabtrieb beschleunigt, leichte Rollreibung bremst, Ränder federn
     const a = tiltAccel();
     if (a) { P.vx += a.x * TILT_GAIN * dt; P.vy += a.y * TILT_GAIN * dt; }
-    const fr = Math.exp(-0.9 * dt); P.vx *= fr; P.vy *= fr;
+    const fr = Math.exp(-TILT_FRICTION * dt); P.vx *= fr; P.vy *= fr;
     const v = Math.hypot(P.vx, P.vy);
     if (v > maxV) { P.vx *= maxV / v; P.vy *= maxV / v; }
     P.x += P.vx * dt; P.y += P.vy * dt;
@@ -1847,7 +1850,7 @@ function drawOwnTrail(now) {
   for (let i = 1; i < n; i++) {
     const a = trail[i - 1], b = trail[i];
     const k = i / (n - 1);
-    const age = clamp(1 - (now - b.t) / (TRAIL_LIFE * 1000), 0, 1);
+    const age = clamp(1 - (now - b.t) / (TRAIL_LIFE * trailScale() * 1000), 0, 1);
     ctx.strokeStyle = hsl((base + k * spread) % 360, 100, 62, (0.15 + 0.85 * k) * (0.3 + 0.7 * age));
     ctx.lineWidth = 1.5 + 4.5 * k;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
